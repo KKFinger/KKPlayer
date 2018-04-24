@@ -59,10 +59,10 @@
 }
 
 - (void)dealloc{
-    KKPlayerLog(@"KKPlayer release");
     [self cleanPlayer];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [[KKAudioManager manager] removeHandlerTarget:self];
+    KKPlayerLog(@"KKPlayer release");
 }
 
 - (void)cleanPlayer{
