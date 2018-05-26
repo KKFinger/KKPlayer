@@ -44,7 +44,7 @@
     [self setupShader];
     [self linkProgram];
     [self useProgram];
-    [self bingShaderVarLocation];
+    [self bindShaderVarLocation];
     [self bindShaderVarValue];
 }
 
@@ -54,6 +54,9 @@
     KKPlayerLog(@"%@ release", self.class);
 }
 
+#pragma mark -- 更新视图的投影矩阵
+
+//播放VR视频时用于预览不同角度的画面，非vr类型的视频则设置为GLKMatrix4Identity
 - (void)updateMatrix:(GLKMatrix4)matrix{
     glUniformMatrix4fv(self.locationMatrix, 1, GL_FALSE, matrix.m);
 }
@@ -144,7 +147,7 @@
 
 #pragma mark -- 子类实现
 
-- (void)bingShaderVarLocation {}
+- (void)bindShaderVarLocation {}
 - (void)bindShaderVarValue {}
 
 @end

@@ -134,7 +134,8 @@
     channelLinesize[KKYUVChannelLuma] = 0;
     channelLinesize[KKYUVChannelChromaB] = 0;
     channelLinesize[KKYUVChannelChromaR] = 0;
-    if (channelPixelBuffer[KKYUVChannelLuma] != NULL && channelPixelsBufferSize[KKYUVChannelLuma] > 0) {
+    if (channelPixelBuffer[KKYUVChannelLuma] != NULL &&
+        channelPixelsBufferSize[KKYUVChannelLuma] > 0) {
         memset(channelPixelBuffer[KKYUVChannelLuma], 0, channelPixelsBufferSize[KKYUVChannelLuma]);
     }
     if (channelPixelBuffer[KKYUVChannelChromaB] != NULL && channelPixelsBufferSize[KKYUVChannelChromaB] > 0) {

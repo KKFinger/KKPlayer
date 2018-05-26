@@ -16,4 +16,5 @@
 @property(nonatomic,assign)GLint locationBlueTextureCoord;
 @property(nonatomic,assign)GLint locationTextureCoordScale;
 + (instancetype)program;
+- (void)bindShaderVarValue;
 @end

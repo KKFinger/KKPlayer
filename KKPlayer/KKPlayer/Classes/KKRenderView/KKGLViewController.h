@@ -10,6 +10,7 @@
 
 @interface KKGLViewController:GLKViewController
 + (instancetype)viewControllerWithRenderView:(KKRenderView *)renderView;
-- (void)reloadViewport;
+- (void)reloadViewport:(CGRect)frame;
 - (UIImage *)snapshot;
+- (GLKView *)glkView;
 @end

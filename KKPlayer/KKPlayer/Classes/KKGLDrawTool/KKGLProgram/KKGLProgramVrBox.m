@@ -55,7 +55,7 @@ static const char fragmentShaderString[] = KK_GLES_STRINGIZE
 
 #pragma mark -- 获取着色器中的变量地址
 
-- (void)bingShaderVarLocation{
+- (void)bindShaderVarLocation{
     self.locationPosition = glGetAttribLocation(self.programId, "aPosition");
     self.locationVignette = glGetAttribLocation(self.programId, "aVignette");
     self.locationRedTextureCoord = glGetAttribLocation(self.programId, "aRedTextureCoord");
@@ -63,6 +63,13 @@ static const char fragmentShaderString[] = KK_GLES_STRINGIZE
     self.locationBlueTextureCoord = glGetAttribLocation(self.programId, "aBlueTextureCoord") ;
     self.locationTextureCoordScale = glGetUniformLocation(self.programId, "uTextureCoordScale");
     self.locationSampler = glGetUniformLocation(self.programId, "uTextureSampler");
+}
+
+#pragma mark -- 对着色器中的变量赋值，比如attribute、uniform变量赋值
+
+- (void)bindShaderVarValue{
+    glUniform1i(self.locationSampler, 0);//对应GL_TEXTURE0
+    glUniform1f(self.locationTextureCoordScale, 1);
 }
 
 @end

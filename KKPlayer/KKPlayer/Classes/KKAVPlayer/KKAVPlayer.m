@@ -19,21 +19,20 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
 @property(nonatomic,weak)KKPlayerInterface *playerInterface;
 
 @property(nonatomic,assign)KKPlayerState state;
-@property(nonatomic,assign)KKPlayerState stateBeforBuffering;
+@property(nonatomic,assign)KKPlayerState stateBeforBuffering;//缓冲时，有可能正在播放，也有可能暂停播放
 @property(nonatomic,assign)NSTimeInterval playableTime;//可播放的长度
-@property(atomic,assign)NSTimeInterval readyToPlayTime;
+@property(nonatomic,assign)NSTimeInterval readyToPlayTime;
 @property(nonatomic,assign)BOOL seeking;
-@property(atomic,assign)BOOL playing;
-@property(atomic,assign)BOOL buffering;
-@property(atomic,assign)BOOL hasPixelBuffer;
+@property(nonatomic,assign)BOOL playing;
+@property(nonatomic,assign)BOOL buffering;
 @property(nonatomic,assign)BOOL forceRenderWithOpenGL;//NO ,使用AVPlayer渲染，YES , 使用opengl渲染
 
 //播放器相关
-@property(atomic,strong)id playBackTimeObserver;//监听播放进度
+@property(nonatomic,strong)id playBackTimeObserver;//监听播放进度
 @property(nonatomic,strong)AVPlayer *player;//渲染图层
 @property(nonatomic,strong)AVPlayerItem *playerItem;//播放对象
-@property(atomic,strong)AVURLAsset *asset;//播放资源
-@property(atomic,strong)AVPlayerItemVideoOutput *output;//获取视频帧的数据，用于GLKView的渲染
+@property(nonatomic,strong)AVURLAsset *asset;//播放资源
+@property(nonatomic,strong)AVPlayerItemVideoOutput *pixelBufOutput;//获取视频帧的数据，用于GLKView的渲染
 @property(nonatomic,strong)NSArray<NSString *> *assetloadKeys;
 
 //音视频轨道信息
@@ -153,7 +152,6 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
             self.state = KKPlayerStatePlaying;
             break;
         case KKPlayerStateFailed:
-            [self clear];
             [self prepareVideoForceRenderWithGL:self.forceRenderWithOpenGL];
             break;
         case KKPlayerStateNone:
@@ -170,6 +168,7 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
             self.state = KKPlayerStatePlaying;
             break;
         default:
+            self.state = KKPlayerStateBuffering;
             break;
     }
     
@@ -195,8 +194,10 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
     if (self.playing) {
         [self.player play];
         self.state = KKPlayerStatePlaying;
-    } else if (self.state == KKPlayerStateBuffering) {
-        self.state = self.stateBeforBuffering;
+    } else {
+        if (self.state == KKPlayerStateBuffering) {
+            self.state = self.stateBeforBuffering;
+        }
     }
 }
 
@@ -226,19 +227,25 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
     }
     
     dispatch_async(dispatch_get_main_queue(), ^{
+        
         self.seeking = YES;
+        
         [self startBuffering];
         
         @weakify(self);
         [self.playerItem seekToTime:CMTimeMakeWithSeconds(time, NSEC_PER_SEC) completionHandler:^(BOOL finished) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 @strongify(self);
+                
                 self.seeking = NO;
+                
                 [self stopBuffering];
                 [self resumeStateAfterBuffering];
+                
                 if (completeHandler) {
                     completeHandler(finished);
                 }
+                
                 KKPlayerLog(@"KKAVPlayer seek success");
             });
         }];
@@ -281,7 +288,9 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
                     } else {
                         error = [NSError errorWithDomain:@"AVPlayer playback error" code:-1 userInfo:nil];
                     }
+                    
                     self.state = KKPlayerStateFailed;
+                    
                     [KKPlayerEventCenter raiseEvent:self.playerInterface error:error];
                     
                     KKPlayerLog(@"KKAVPlayer item status failed");
@@ -320,7 +329,7 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
 
 - (void)trySetupFrameOutput{
     BOOL isReadyToPlay = self.playerItem.status == AVPlayerStatusReadyToPlay && self.readyToPlayTime > 0 && (([NSDate date].timeIntervalSince1970 - self.readyToPlayTime) > 0.3);
-    if (isReadyToPlay) {
+    if (isReadyToPlay && !self.pixelBufOutput) {
         [self setupFrameOutput];
     }
 }
@@ -328,9 +337,9 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
 - (void)setupFrameOutput{
     [self cleanFrameOutput];
     NSDictionary *pixelBufferAttr = @{(id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)};
-    self.output = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixelBufferAttr];
-    [self.output requestNotificationOfMediaDataChangeWithAdvanceInterval:PixelBufferRequestInterval];
-    [self.playerItem addOutput:self.output];
+    self.pixelBufOutput = [[AVPlayerItemVideoOutput alloc] initWithPixelBufferAttributes:pixelBufferAttr];
+    [self.pixelBufOutput requestNotificationOfMediaDataChangeWithAdvanceInterval:PixelBufferRequestInterval];
+    [self.playerItem addOutput:self.pixelBufOutput];
     
     KKPlayerLog(@"KKAVPlayer add output success");
 }
@@ -346,20 +355,9 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
         return nil;
     }
     
-    BOOL hasNewPixelBuffer = [self.output hasNewPixelBufferForItemTime:self.playerItem.currentTime];
-    if (!hasNewPixelBuffer) {
-        if (self.hasPixelBuffer){
-            return nil;
-        }
-        [self trySetupFrameOutput];
-        return nil;
-    }
-    
-    CVPixelBufferRef pixelBuffer = [self.output copyPixelBufferForItemTime:self.playerItem.currentTime itemTimeForDisplay:nil];
+    CVPixelBufferRef pixelBuffer = [self.pixelBufOutput copyPixelBufferForItemTime:self.playerItem.currentTime itemTimeForDisplay:nil];
     if (!pixelBuffer) {
         [self trySetupFrameOutput];
-    } else {
-        self.hasPixelBuffer = YES;
     }
     return pixelBuffer;
 }
@@ -408,16 +406,16 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
     self.readyToPlayTime = 0;
     self.buffering = NO;
     self.playing = NO;
+    
     ((KKRenderView *)(self.playerInterface.videoRenderView)).decodeType = KKDecoderTypeEmpty;
     ((KKRenderView *)(self.playerInterface.videoRenderView)).renderViewType = KKRenderViewTypeEmpty;
 }
 
 - (void)cleanFrameOutput{
-    if (self.playerItem) {
-        [self.playerItem removeOutput:self.output];
+    if (self.playerItem && self.pixelBufOutput) {
+        [self.playerItem removeOutput:self.pixelBufOutput];
     }
-    self.output = nil;
-    self.hasPixelBuffer = NO;
+    self.pixelBufOutput = nil;
 }
 
 - (void)cleanAVPlayerItem{
@@ -426,7 +424,10 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
         [self.playerItem removeObserver:self forKeyPath:@"status"];
         [self.playerItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
         [self.playerItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
-        [self.playerItem removeOutput:self.output];
+        if(self.pixelBufOutput){
+            [self.playerItem removeOutput:self.pixelBufOutput];
+            self.pixelBufOutput = nil ;
+        }
         [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:self.playerItem];
         self.playerItem = nil;
     }

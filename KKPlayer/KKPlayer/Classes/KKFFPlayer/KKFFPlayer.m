@@ -97,6 +97,7 @@
     
     [((KKRenderView *)(self.playerInterface.videoRenderView)) setRenderFFmpegDelegate:self];
     [((KKRenderView *)(self.playerInterface.videoRenderView)) setDecodeType:KKDecoderTypeFFmpeg];
+    [((KKRenderView *)(self.playerInterface.videoRenderView)) setRenderViewType:KKRenderViewTypeGLKView];
     
     self.decoder = [KKFFDecoder decoderWithContentURL:self.playerInterface.contentURL
                                  formatContextOptions:self.playerInterface.formatContextOptions
@@ -195,9 +196,9 @@
 }
 
 - (void)decoderDidPrepareToDecodeFrames:(KKFFDecoder *)decoder{
-    if (self.decoder.videoEnable) {
-        [((KKRenderView *)(self.playerInterface.videoRenderView)) setRenderViewType:KKRenderViewTypeGLKView];
-    }
+//    if (self.decoder.videoEnable) {
+//        [((KKRenderView *)(self.playerInterface.videoRenderView)) setRenderViewType:KKRenderViewTypeGLKView];
+//    }
 }
 
 - (void)decoderDidEndOfFile:(KKFFDecoder *)decoder{

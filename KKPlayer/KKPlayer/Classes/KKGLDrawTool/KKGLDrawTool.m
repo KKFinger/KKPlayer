@@ -113,9 +113,6 @@
 }
 
 - (void)drawWithGLFrame:(KKGLFrame *)glFrame viewPort:(CGRect)viewport{
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-    
     if (self.videoType == KKVideoTypeVR && self.displayType == KKDisplayTypeVRBox) {
         [self.drawBoxTool beforDraw];
     }
@@ -123,6 +120,9 @@
     KKGLProgram *program = [self programWithType:glFrame.type];
     [program useProgram];
     [program bindShaderVarValue];
+    
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
     
     CGFloat scale = [UIScreen mainScreen].scale;
     CGRect rect = CGRectMake(0, 0, viewport.size.width * scale, viewport.size.height * scale);
@@ -171,8 +171,9 @@
             break;
     }
     
+    [self.glView bindDrawable];
+    
     if (self.videoType == KKVideoTypeVR && self.displayType == KKDisplayTypeVRBox) {
-        [self.glView bindDrawable];
         [self.drawBoxTool drawBox];
     }
 }

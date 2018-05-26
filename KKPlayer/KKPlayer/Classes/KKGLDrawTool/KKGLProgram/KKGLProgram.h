@@ -22,7 +22,7 @@
 
 #pragma mark -- 子类实现
 
-- (void)bingShaderVarLocation;//获取着色器中的变量地址
+- (void)bindShaderVarLocation;//获取着色器中的变量地址
 - (void)bindShaderVarValue;//对着色器中的变量赋值，比如attribute、uniform变量赋值
 
 @end

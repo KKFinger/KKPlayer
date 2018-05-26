@@ -56,8 +56,6 @@ static GLKVector2 textureBufferDataR270[] = {
 static GLuint vertexBufferId = 0;
 static GLuint indexBufferId = 0;
 static GLuint textureBufferId = 0;
-static int const indexCount = 6;
-static int const vertexCount = 4;
 
 @implementation KKGLCoordBufferNormal
 
@@ -68,8 +66,8 @@ static int const vertexCount = 4;
 }
 
 - (void)setupCoordBuffer{
-    self.indexCount = indexCount;
-    self.vertexCount = vertexCount;
+    self.indexCount = 6;
+    self.vertexCount = 4;
     self.indexBufferId = indexBufferId;
     self.vertexBufferId = vertexBufferId;
     self.textureBufferId = textureBufferId;

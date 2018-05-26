@@ -54,6 +54,9 @@
             case KKPlayerStateFailed:
                 text = @"Error";
                 break;
+            case KKPlayerStateSeeking:
+                text = @"seeking";
+                break ;
         }
         strongSelf.stateLabel.text = text;
     } progressChangeBlock:^(KKPlayerInterface *interface, CGFloat percent, CGFloat currentTime, CGFloat totalTime) {
@@ -74,6 +77,10 @@
     
     NSURL * normalVideo = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"The Three Diablos" ofType:@"avi"]];
     [self.player preparePlayerWithURL:normalVideo videoType:KKVideoTypeNormal displayType:KKDisplayTypeNormal];
+    
+//    NSURL * vrVideo = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"google-help-vr" ofType:@"mp4"]];
+//    [self.player preparePlayerWithURL:vrVideo videoType:KKVideoTypeVR displayType:KKDisplayTypeVRBox];
+    //[self.player preparePlayerWithURL:vrVideo videoType:KKVideoTypeVR displayType:KKDisplayTypeVRBox];
 }
 
 - (void)viewDidLayoutSubviews{

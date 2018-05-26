@@ -16,12 +16,16 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
-    return 1;
+    return 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     UITableViewCell * cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
-    cell.textLabel.text = @"The Three Diablos";
+    if(indexPath.row == 0){
+        cell.textLabel.text = @"The Three Diablos";
+    }else{
+        cell.textLabel.text = @"goole help vr";
+    }
     return cell;
 }
 

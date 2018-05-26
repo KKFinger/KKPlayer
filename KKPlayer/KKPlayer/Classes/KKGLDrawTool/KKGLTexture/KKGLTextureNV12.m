@@ -86,7 +86,7 @@
                                                           GL_RED_EXT,
                                                           GL_UNSIGNED_BYTE,
                                                           0,
-                                                          &_lumaTexture);
+                                                          &self->_lumaTexture);
 
     if (result == kCVReturnSuccess) {
         glBindTexture(CVOpenGLESTextureGetTarget(self.lumaTexture), CVOpenGLESTextureGetName(self.lumaTexture));
@@ -111,7 +111,7 @@
                                                           GL_RG_EXT,
                                                           GL_UNSIGNED_BYTE,
                                                           1,
-                                                          &_chromaTexture);
+                                                          &self->_chromaTexture);
 
     if (result == kCVReturnSuccess) {
         glBindTexture(CVOpenGLESTextureGetTarget(self.chromaTexture), CVOpenGLESTextureGetName(self.chromaTexture));

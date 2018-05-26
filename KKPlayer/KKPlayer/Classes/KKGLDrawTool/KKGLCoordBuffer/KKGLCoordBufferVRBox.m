@@ -7,11 +7,15 @@
 //
 
 #import "KKGLCoordBufferVRBox.h"
+#import "KKGLProgramVrBox.h"
 
 static int const indexCount = 3158;
 static int const vertexCount = 14400;
 
-@interface KKGLCoordBufferVRBox ()
+@interface KKGLCoordBufferVRBox (){
+    GLfloat vertexBufferData[14400];
+    GLshort indexBufferData[3158];
+}
 @property(nonatomic,assign)GLuint indexBufferId;
 @property(nonatomic,assign)GLuint vertexBufferId;
 @property(nonatomic,assign)int indexCount;
@@ -52,8 +56,8 @@ static int const vertexCount = 14400;
     self.indexCount = indexCount;
     self.vertexCount = vertexCount;
     
-    GLfloat vertexBufferData[14400];
-    GLshort indexBufferData[3158];
+//    GLfloat vertexBufferData[14400];
+//    GLshort indexBufferData[3158];
     
     float xEyeOffsetScreen = 0.523064613;
     float yEyeOffsetScreen = 0.80952388;
@@ -168,16 +172,30 @@ static int const vertexCount = 14400;
         vertexOffset += 40;
     }
     
-    GLuint bufferIDs[2] = { 0, 0 };
-    glGenBuffers(2, bufferIDs);
-    self.vertexBufferId = bufferIDs[0];
-    self.indexBufferId = bufferIDs[1];
-    
+    //[self bindCoordData];
+}
+
+- (void)bindCoordDataWithProgram:(__weak KKGLProgramVrBox *)program{
     glBindBuffer(GL_ARRAY_BUFFER, self.vertexBufferId);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertexBufferData), vertexBufferData, GL_STATIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.indexBufferId);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexBufferData), indexBufferData, GL_STATIC_DRAW);
+    
+    glVertexAttribPointer(program.locationPosition, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(0 * sizeof(float)));
+    glEnableVertexAttribArray(program.locationPosition);
+    
+    glVertexAttribPointer(program.locationVignette, 1, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(2 * sizeof(float)));
+    glEnableVertexAttribArray(program.locationVignette);
+    
+    glVertexAttribPointer(program.locationBlueTextureCoord, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(7 * sizeof(float)));
+    glEnableVertexAttribArray(program.locationBlueTextureCoord);
+    
+    glVertexAttribPointer(program.locationRedTextureCoord, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(program.locationRedTextureCoord);
+    
+    glVertexAttribPointer(program.locationGreenTextureCoord, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(5 * sizeof(float)));
+    glEnableVertexAttribArray(program.locationGreenTextureCoord);
 }
 
 - (float)blueDistortInverse:(float)radius{

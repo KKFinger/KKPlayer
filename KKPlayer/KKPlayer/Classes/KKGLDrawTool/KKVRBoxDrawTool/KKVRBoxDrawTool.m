@@ -38,54 +38,30 @@
 }
 
 - (void)drawBox{
-    glViewport(0, 0, self.viewportSize.width, self.viewportSize.height);
     
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_SCISSOR_TEST);
+    [self.program useProgram];
+    [self.program bindShaderVarValue];
+    
+    glViewport(0, 0, self.viewportSize.width, self.viewportSize.height);
     
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    glDisable(GL_CULL_FACE);
     glEnable(GL_SCISSOR_TEST);
-    
-    glScissor(0, 0, self.viewportSize.width / 2, self.viewportSize.height);
-    [self draw:self.leftEye];
-    
-    glScissor(self.viewportSize.width / 2, 0, self.viewportSize.width / 2, self.viewportSize.height);
-    [self draw:self.rightEye];
-    
-    glDisable(GL_SCISSOR_TEST);
-}
-
-- (void)draw:(KKGLCoordBufferVRBox *)eye{
-    
-    [self.program useProgram];
-    
-    glBindBuffer(GL_ARRAY_BUFFER, eye.vertexBufferId);
-    
-    glVertexAttribPointer(self.program.locationPosition, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(0 * sizeof(float)));
-    glEnableVertexAttribArray(self.program.locationPosition);
-    
-    glVertexAttribPointer(self.program.locationVignette, 1, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(2 * sizeof(float)));
-    glEnableVertexAttribArray(self.program.locationVignette);
-    
-    glVertexAttribPointer(self.program.locationBlueTextureCoord, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(7 * sizeof(float)));
-    glEnableVertexAttribArray(self.program.locationBlueTextureCoord);
-    
-    glVertexAttribPointer(self.program.locationRedTextureCoord, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(self.program.locationRedTextureCoord);
-    
-    glVertexAttribPointer(self.program.locationGreenTextureCoord, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void *)(5 * sizeof(float)));
-    glEnableVertexAttribArray(self.program.locationGreenTextureCoord);
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, self.texture.textureId);
     
-    glUniform1i(self.program.locationSampler, 0);//对应GL_TEXTURE0
-    glUniform1f(self.program.locationTextureCoordScale, 1);
+    glScissor(0, 0, self.viewportSize.width / 2, self.viewportSize.height);
+    [self.leftEye bindCoordDataWithProgram:self.program];
+    glDrawElements(GL_TRIANGLE_STRIP, self.leftEye.indexCount, GL_UNSIGNED_SHORT, 0);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eye.indexBufferId);
-    glDrawElements(GL_TRIANGLE_STRIP, eye.indexCount, GL_UNSIGNED_SHORT, 0);
+    glScissor(self.viewportSize.width / 2, 0, self.viewportSize.width / 2, self.viewportSize.height);
+    [self.rightEye bindCoordDataWithProgram:self.program];
+    glDrawElements(GL_TRIANGLE_STRIP, self.rightEye.indexCount, GL_UNSIGNED_SHORT, 0);
+    
+    glDisable(GL_SCISSOR_TEST);
 }
 
 #pragma mark -- @property setter

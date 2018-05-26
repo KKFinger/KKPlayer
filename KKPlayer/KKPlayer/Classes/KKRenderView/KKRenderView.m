@@ -62,6 +62,7 @@
         case KKRenderViewTypeEmpty:
             break;
         case KKRenderViewTypeAVPlayerLayer:{
+            [self.avPlayerLayer removeFromSuperlayer];
             self.avPlayerLayer = [AVPlayerLayer playerLayerWithPlayer:nil];
             [self.layer insertSublayer:self.avPlayerLayer atIndex:0];
             [self resetAVPlayer];
@@ -69,9 +70,9 @@
         }
             break;
         case KKRenderViewTypeGLKView:{
-            self.glViewController = [KKGLViewController viewControllerWithRenderView:self];
             dispatch_async(dispatch_get_main_queue(), ^{
-                GLKView *glView = (GLKView *)self.glViewController.view;
+                self.glViewController = [KKGLViewController viewControllerWithRenderView:self];
+                GLKView *glView = [self.glViewController glkView];
                 [glView removeFromSuperview];
                 [self insertSubview:glView atIndex:0];
             });
@@ -115,7 +116,7 @@
         [self.avPlayerLayer removeAllAnimations];
     }
     if (self.glViewController) {
-        [self.glViewController reloadViewport];
+        [self.glViewController reloadViewport:frame];
     }
 }
 
@@ -127,13 +128,14 @@
         case KKDecoderTypeError:
             break;
         case KKDecoderTypeAVPlayer:{//使用avplayer播放vr视频时，视频的渲染方式为opengl
-            CVPixelBufferRef pixelBuffer = [self.renderAVPlayerDelegate renderGetPixelBufferAtCurrentTime];
+            CVPixelBufferRef pixelBuffer = [self.renderAVPlayerDelegate renderGetPixelBufferAtCurrentTime];//从avplayer获取渲染的视频数据
             if (pixelBuffer) {
                 [glFrame updateWithCVPixelBuffer:pixelBuffer];
             }
         }
             break;
         case KKDecoderTypeFFmpeg:{
+            //从ffmpeg获取解码的数据
             KKFFVideoFrame *videoFrame = [self.renderFFmpegDelegate renderFrameWithCurrentPostion:glFrame.currentPosition
                                                                                  currentDuration:glFrame.currentDuration];
             if (videoFrame) {
@@ -166,14 +168,14 @@
         self.avPlayerLayer = nil;
     }
     if (self.glViewController) {
-        GLKView *glView = (GLKView *)self.glViewController.view;
+        GLKView *glView = [self.glViewController glkView];
         [glView removeFromSuperview];
         self.glViewController = nil;
     }
     [self.fingerRotation clean];
 }
 
-#pragma mark -- 交互事件
+#pragma mark -- 交互事件，播放VR视频时，用于实时切换预览角度
 
 - (void)setupEventHandler{
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackgroundNotify:) name:UIApplicationDidEnterBackgroundNotification object:nil];
@@ -201,7 +203,9 @@
 }
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
-//    if (self.playerInterface.displayType == KKDisplayTypeVRBox) return;
+    if(self.playerInterface.videoType != KKVideoTypeVR){
+        return ;
+    }
     switch (self.renderViewType) {
         case KKRenderViewTypeEmpty:
         case KKRenderViewTypeAVPlayerLayer:

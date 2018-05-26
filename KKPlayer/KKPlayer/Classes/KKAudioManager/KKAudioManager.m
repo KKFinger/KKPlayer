@@ -81,31 +81,6 @@ typedef struct{
     return self.registered;
 }
 
-- (void)unregisterAudioSession{
-    if (self.registered) {
-        self.registered = NO;
-        OSStatus result = AUGraphUninitialize(self.graphContext->graph);
-        self.error = checkError(result, @"graph uninitialize error");
-        if (self.error) {
-            KKPlayerLog(@"%@",self.error.domain);
-        }
-        result = AUGraphClose(self.graphContext->graph);
-        self.error = checkError(result, @"graph close error");
-        if (self.error) {
-            KKPlayerLog(@"%@",self.error.domain);
-        }
-        result = DisposeAUGraph(self.graphContext->graph);
-        self.error = checkError(result, @"graph dispose error");
-        if (self.error) {
-            KKPlayerLog(@"%@",self.error.domain);
-        }
-        if (self.graphContext) {
-            free(self.graphContext);
-            self.graphContext = NULL;
-        }
-    }
-}
-
 - (BOOL)setupAudioUnit{
     OSStatus result;
     UInt32 audioStreamBasicDescriptionSize = sizeof(AudioStreamBasicDescription);;
@@ -155,11 +130,12 @@ typedef struct{
         return NO;
     }
     
+    //连接各个节点AUNode
     result = AUGraphConnectNodeInput(self.graphContext->graph,
-                            self.graphContext->converterUnitContext.node,
-                            0,
-                            self.graphContext->mixerUnitContext.node,
-                            0);
+                                     self.graphContext->converterUnitContext.node,
+                                     0,
+                                     self.graphContext->mixerUnitContext.node,
+                                     0);
     self.error = checkError(result, @"graph connect converter and mixer error");
     if (self.error) {
         return NO;
@@ -175,6 +151,7 @@ typedef struct{
         return NO;
     }
     
+    //通过AUNode获取Audio Unit
     result = AUGraphNodeInfo(self.graphContext->graph,
                              self.graphContext->converterUnitContext.node,
                              &converterDescription,
@@ -202,6 +179,7 @@ typedef struct{
         return NO;
     }
     
+    
     AURenderCallbackStruct auRenderCallback;
     auRenderCallback.inputProc = renderCallback;
     auRenderCallback.inputProcRefCon = (__bridge void *)(self);
@@ -216,7 +194,8 @@ typedef struct{
     
     result = AudioUnitGetProperty(self.graphContext->outputUnitContext.audioUnit,
                                   kAudioUnitProperty_StreamFormat,
-                                  kAudioUnitScope_Input, 0,
+                                  kAudioUnitScope_Input,
+                                  0,
                                   &self.graphContext->commonFormat,
                                   &audioStreamBasicDescriptionSize);
     self.error = checkError(result, @"get hardware output stream format error");
@@ -300,6 +279,31 @@ typedef struct{
     }
     
     return YES;
+}
+
+- (void)unregisterAudioSession{
+    if (self.registered) {
+        self.registered = NO;
+        OSStatus result = AUGraphUninitialize(self.graphContext->graph);
+        self.error = checkError(result, @"graph uninitialize error");
+        if (self.error) {
+            KKPlayerLog(@"%@",self.error.domain);
+        }
+        result = AUGraphClose(self.graphContext->graph);
+        self.error = checkError(result, @"graph close error");
+        if (self.error) {
+            KKPlayerLog(@"%@",self.error.domain);
+        }
+        result = DisposeAUGraph(self.graphContext->graph);
+        self.error = checkError(result, @"graph dispose error");
+        if (self.error) {
+            KKPlayerLog(@"%@",self.error.domain);
+        }
+        if (self.graphContext) {
+            free(self.graphContext);
+            self.graphContext = NULL;
+        }
+    }
 }
 
 #pragma mark -- 播放声音

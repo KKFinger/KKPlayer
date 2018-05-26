@@ -54,7 +54,7 @@ static const char fragmentShaderString[] = KK_GLES_STRINGIZE
 
 #pragma mark -- 获取着色器中的变量地址
 
-- (void)bingShaderVarLocation{
+- (void)bindShaderVarLocation{
     self.locationPosition = glGetAttribLocation(self.programId, "position");
     self.locationTextureCoord = glGetAttribLocation(self.programId, "textureCoord");
     self.locationMatrix = glGetUniformLocation(self.programId, "posMatrix");

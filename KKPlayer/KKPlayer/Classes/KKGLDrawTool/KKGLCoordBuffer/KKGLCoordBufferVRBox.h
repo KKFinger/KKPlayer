@@ -13,6 +13,7 @@ typedef NS_ENUM(NSUInteger, KKVRBoxType) {
     KKVRBoxTypeRight,
 };
 
+@class KKGLProgramVrBox;
 @interface KKGLCoordBufferVRBox : NSObject
 @property(nonatomic,assign,readonly)KKVRBoxType vrBoxType;
 @property(nonatomic,assign,readonly)GLuint indexBufferId;
@@ -20,4 +21,5 @@ typedef NS_ENUM(NSUInteger, KKVRBoxType) {
 @property(nonatomic,assign,readonly)int indexCount;
 @property(nonatomic,assign,readonly)int vertexCount;
 - (instancetype)initWithBoxType:(KKVRBoxType)vrBoxType;
+- (void)bindCoordDataWithProgram:(__weak KKGLProgramVrBox *)program;
 @end

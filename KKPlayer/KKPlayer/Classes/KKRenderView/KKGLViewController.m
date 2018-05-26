@@ -53,15 +53,15 @@
 - (void)setupOpenGL{
     self.openGLLock = [[NSLock alloc] init];
 
-    GLKView *glView = (GLKView *)self.view;
-    glView.backgroundColor = [UIColor blackColor];
-    
     EAGLContext *context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-    glView.context = context;
     [EAGLContext setCurrentContext:context];
     
+    GLKView *glView = (GLKView *)self.view;
+    glView.backgroundColor = [UIColor blackColor];
     glView.drawableDepthFormat = GLKViewDrawableDepthFormat24;
     glView.contentScaleFactor = [UIScreen mainScreen].scale;
+    glView.context = context;
+    
     self.pauseOnWillResignActive = NO;
     self.resumeOnDidBecomeActive = YES;
     
@@ -84,9 +84,9 @@
 
 #pragma mark -- 重置绘制窗口
 
-- (void)reloadViewport{
+- (void)reloadViewport:(CGRect)frame{
     GLKView *glView = (GLKView *)self.view;
-    CGRect superviewFrame = glView.superview.bounds;
+    CGRect superviewFrame = frame;
     CGFloat superviewAspect = superviewFrame.size.width / superviewFrame.size.height;
     
     if (self.aspect <= 0) {
@@ -144,7 +144,7 @@
 - (void)setAspect:(CGFloat)aspect{
     if (_aspect != aspect) {
         _aspect = aspect;
-        [self reloadViewport];
+        [self reloadViewport:self.glkView.superview.bounds];
     }
 }
 
@@ -163,8 +163,20 @@
     return glView.snapshot;
 }
 
+#pragma mark -- 获取GLKView
+
+- (GLKView *)glkView{
+    return (GLKView *)self.view;
+}
+
 #pragma mark -- GLKViewDelegate
 
+/*KKGLViewController初始化完成后便会不间断的调用GLKViewDelegate中的代理方法，因此，在GLKViewDelegate中
+  需要完成以下工作:
+  1、获取原始的视频帧数据
+  2、根据视频帧数据生成opengl的纹理图
+  3、将opengl的顶点坐标、纹理坐标、投影矩阵传入opengl的渲染管道并完成一幅视频帧的绘制
+ */
 - (void)glkView:(GLKView *)glView drawInRect:(CGRect)rect{
     
     [self.openGLLock lock];
@@ -181,6 +193,7 @@
         [self.currentGLFrame didDraw];
         [self setDrawToken:YES];
     }
+    
     [self.openGLLock unlock];
 }
 
