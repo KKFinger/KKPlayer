@@ -75,7 +75,9 @@
     }];
     [self.view insertSubview:self.player.videoRenderView atIndex:0];
     
-    NSURL * normalVideo = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"The Three Diablos" ofType:@"avi"]];
+    //NSURL * normalVideo = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"The Three Diablos" ofType:@"avi"]];
+    //NSURL *normalVideo = [NSURL URLWithString:@"https://aweme.snssdk.com/aweme/v1/play/?video_id=v0200f190000bc24btrrh3p0ipf27v20&line=0&app_id=13"];
+    NSURL * normalVideo = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"i-see-fire" ofType:@"mp4"]];
     [self.player preparePlayerWithURL:normalVideo videoType:KKVideoTypeNormal displayType:KKDisplayTypeNormal];
     
 //    NSURL * vrVideo = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"google-help-vr" ofType:@"mp4"]];

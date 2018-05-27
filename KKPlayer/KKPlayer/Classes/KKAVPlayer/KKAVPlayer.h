@@ -20,7 +20,7 @@
 @property(nonatomic,assign,readonly)NSTimeInterval duration;
 @property(nonatomic,assign,readonly)NSTimeInterval playableTime;
 
-@property(nonatomic,assign,readonly)BOOL seeking;
+@property(nonatomic,assign)BOOL seeking;
 @property(nonatomic,assign,readonly)BOOL seekEnable;
 
 //音视频轨道信息
