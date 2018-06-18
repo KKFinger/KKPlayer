@@ -16,13 +16,13 @@
 
 @interface KKFFAudioDecoder (){
     AVCodecContext *_codecContext;
-    AVFrame *_tempFrame;
+    AVFrame *_decodedFrame;
     
     SwrContext *_audioSwrContext;
     void *_audioSwrBuffer;
 }
 @property(nonatomic,strong)KKFFFrameQueue *frameQueue;//已解码帧队列
-@property(nonatomic,strong)KKFFFramePool *framePool;//重用池，避免重复创建帧浪费性能资源，程序从重用池中获取帧并初始化并加入到frameQueue红
+@property(nonatomic,strong)KKFFFramePool *framePool;//重用池，避免重复创建帧浪费性能资源，程序从重用池中获取帧并初始化并加入到frameQueue中
 @property(nonatomic,assign)NSTimeInterval timebase;
 @property(nonatomic,assign)Float64 samplingRate;
 @property(nonatomic,assign)UInt32 channelCount;
@@ -40,7 +40,7 @@
         self.samplingRate = samplingRate;
         self.channelCount = channelCount;
         self->_codecContext = codecContext;
-        self->_tempFrame = av_frame_alloc();
+        self->_decodedFrame = av_frame_alloc();
         self->_timebase = timebase;
         [self setup];
     }
@@ -57,9 +57,9 @@
         swr_free(&_audioSwrContext);
         _audioSwrContext = NULL;
     }
-    if (_tempFrame) {
-        av_free(_tempFrame);
-        _tempFrame = NULL;
+    if (_decodedFrame) {
+        av_free(_decodedFrame);
+        _decodedFrame = NULL;
     }
     KKPlayerLog(@"KKFFAudioDecoder release");
 }
@@ -84,8 +84,8 @@
 
 #pragma mark -- 获取解码后的音频数据
 
-- (KKFFAudioFrame *)getFrameWithBlocking{
-    return [self.frameQueue getFirstFrameWithBlocking];
+- (KKFFAudioFrame *)frameWithBlocking{
+    return [self.frameQueue headFrameWithBlocking];
 }
 
 #pragma mark -- 将原始的音频帧数据加到队列中
@@ -99,7 +99,7 @@
     }
     
     while (result >= 0) {
-        result = avcodec_receive_frame(_codecContext, _tempFrame);
+        result = avcodec_receive_frame(_codecContext, _decodedFrame);
         if (result < 0) {
             if (result != AVERROR(EAGAIN) && result != AVERROR_EOF) {
                 return -1;
@@ -121,14 +121,14 @@
 #pragma mark -- 解码音频数据
 
 - (KKFFAudioFrame *)decodeAudioFrame:(int)packetSize{
-    if (!_tempFrame->data[0]) return nil;
+    if (!_decodedFrame->data[0]) return nil;
     
     int numberOfFrames;
     void *audioDataBuffer;
     
     if (_audioSwrContext) {
         const int ratio = MAX(1, _samplingRate / _codecContext->sample_rate) * MAX(1, _channelCount / _codecContext->channels) * 2;
-        const int bufferSize = av_samples_get_buffer_size(NULL, _channelCount, _tempFrame->nb_samples * ratio, AV_SAMPLE_FMT_S16, 1);
+        const int bufferSize = av_samples_get_buffer_size(NULL, _channelCount, _decodedFrame->nb_samples * ratio, AV_SAMPLE_FMT_S16, 1);
         
         if (!_audioSwrBuffer || _audioSwrBufferSize < bufferSize) {
             _audioSwrBufferSize = bufferSize;
@@ -136,7 +136,7 @@
         }
         
         Byte *outyput_buffer[2] = {_audioSwrBuffer, 0};
-        numberOfFrames = swr_convert(_audioSwrContext, outyput_buffer, _tempFrame->nb_samples * ratio, (const uint8_t **)_tempFrame->data, _tempFrame->nb_samples);
+        numberOfFrames = swr_convert(_audioSwrContext, outyput_buffer, _decodedFrame->nb_samples * ratio, (const uint8_t **)_decodedFrame->data, _decodedFrame->nb_samples);
         NSError * error = KKFFCheckError(numberOfFrames);
         if (error) {
             KKPlayerLog(@"audio codec error : %@", error);
@@ -148,16 +148,17 @@
             KKPlayerLog(@"audio format error");
             return nil;
         }
-        audioDataBuffer = _tempFrame->data[0];
-        numberOfFrames = _tempFrame->nb_samples;
+        audioDataBuffer = _decodedFrame->data[0];
+        numberOfFrames = _decodedFrame->nb_samples;
     }
     
     const NSUInteger numberOfElements = numberOfFrames * self->_channelCount;
     
+    //根据time_base获得音频帧的真实的位置和时长,这一步很重要，会直接影响播放时的音视频同步问题
     KKFFAudioFrame *audioFrame = [self.framePool getUnuseFrame];
     audioFrame.packetSize = packetSize;
-    audioFrame.position = av_frame_get_best_effort_timestamp(_tempFrame) * _timebase;
-    audioFrame.duration = av_frame_get_pkt_duration(_tempFrame) * _timebase;
+    audioFrame.position = av_frame_get_best_effort_timestamp(_decodedFrame) * _timebase;
+    audioFrame.duration = av_frame_get_pkt_duration(_decodedFrame) * _timebase;
     audioFrame.samplesLength = numberOfElements * sizeof(float);
     if (audioFrame.duration == 0) {
         audioFrame.duration = audioFrame.samplesLength / (sizeof(float) * _channelCount * _samplingRate);
@@ -172,9 +173,9 @@
 
 #pragma mark -- 清理
 
-- (void)flush{
-    [self.frameQueue flush];
-    [self.framePool flush];
+- (void)clean{
+    [self.frameQueue clean];
+    [self.framePool clean];
     if (_codecContext) {
         avcodec_flush_buffers(_codecContext);
     }
@@ -182,7 +183,7 @@
 
 - (void)destroy{
     [self.frameQueue destroy];
-    [self.framePool flush];
+    [self.framePool clean];
 }
 
 #pragma mark -- @property getter&setter

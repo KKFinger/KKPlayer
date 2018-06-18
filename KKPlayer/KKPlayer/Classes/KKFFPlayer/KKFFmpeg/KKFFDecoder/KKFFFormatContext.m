@@ -219,7 +219,7 @@ static int ffmpegInterruptCallback(void *ctx){
     NSError * error = nil;
     if (self.videoTracks.count > 0){
         for (KKFFTrack *obj in self.videoTracks){
-            NSInteger index = obj.index;
+            int index = obj.index;
             if ((formatContext->streams[index]->disposition & AV_DISPOSITION_ATTACHED_PIC) == 0){
                 AVCodecContext *codec_context;
                 error = [self openStreamWithTrackIndex:index codecContext:&codec_context domain:@"video"];
@@ -301,7 +301,8 @@ static int ffmpegInterruptCallback(void *ctx){
     if (!av_dict_get(options, "threads", NULL, 0)) {
         av_dict_set(&options, "threads", "auto", 0);
     }
-    if (codec_context->codec_type == AVMEDIA_TYPE_VIDEO || codec_context->codec_type == AVMEDIA_TYPE_AUDIO) {
+    if (codec_context->codec_type == AVMEDIA_TYPE_VIDEO ||
+        codec_context->codec_type == AVMEDIA_TYPE_AUDIO) {
         av_dict_set(&options, "refcounted_frames", "1", 0);
     }
     result = avcodec_open2(codec_context, codec, &options);
@@ -318,27 +319,9 @@ static int ffmpegInterruptCallback(void *ctx){
 
 #pragma mark -- 文件seek
 
-- (void)seekFileWithFFTimebase:(NSTimeInterval)time{
-    int64_t ts = time * AV_TIME_BASE;
+- (void)seekFileWithSecond:(NSTimeInterval)second{
+    int64_t ts = second * AV_TIME_BASE;
     av_seek_frame(self->formatContext, -1, ts, AVSEEK_FLAG_BACKWARD);
-}
-
-- (void)seekFileWithVideoTimebase:(NSTimeInterval)time{
-    if (self.videoEnable){
-        int64_t ts = time * 1000.0 / self.videoTimebase;
-        av_seek_frame(self->formatContext, -1, ts, AVSEEK_FLAG_BACKWARD);
-    }else{
-        [self seekFileWithFFTimebase:time];
-    }
-}
-
-- (void)seekFileWithAudioTimebase:(NSTimeInterval)time{
-    if (self.audioTimebase){
-        int64_t ts = time * 1000 / self.audioTimebase;
-        av_seek_frame(self->formatContext, -1, ts, AVSEEK_FLAG_BACKWARD);
-    }else{
-        [self seekFileWithFFTimebase:time];
-    }
 }
 
 - (BOOL)seekEnable{
@@ -363,7 +346,7 @@ static int ffmpegInterruptCallback(void *ctx){
 
 - (NSTimeInterval)duration{
     if (!self->formatContext) return 0;
-    int64_t duration = self->formatContext->duration;
+    int64_t duration = self->formatContext->duration;//duration的单位是微秒，1秒=1000毫秒=1000000微秒
     if (duration < 0) {
         return 0;
     }
@@ -372,7 +355,7 @@ static int ffmpegInterruptCallback(void *ctx){
 
 - (NSTimeInterval)bitrate{
     if (!self->formatContext) return 0;
-    return (self->formatContext->bit_rate / 1000.0f);
+    return (self->formatContext->bit_rate / 1000.0f);//AVFormatContext中的bit_rate单位为bps，转换成kbps需要除以1000
 }
 
 - (NSString *)contentURLString{

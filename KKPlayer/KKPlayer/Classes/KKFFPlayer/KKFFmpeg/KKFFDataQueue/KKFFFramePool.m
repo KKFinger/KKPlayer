@@ -117,9 +117,12 @@
     [self.lock unlock];
 }
 
-- (void)flush{
+- (void)clean{
     [self.lock lock];
+    
+    @weakify(self);
     [self.usedFrames enumerateObjectsUsingBlock:^(KKFFFrame * _Nonnull obj, BOOL * _Nonnull stop) {
+        @strongify(self);
         [self.unuseFrames addObject:obj];
     }];
     [self.usedFrames removeAllObjects];

@@ -19,12 +19,21 @@ static AVPacket flushPacket;
 
 @interface KKFFVideoDecoder (){
     AVCodecContext *_codecContext;
-    AVFrame *_tempFrame;
+    AVFrame *_decodeFrame;
 }
 @property(nonatomic,assign)BOOL canceled;
+@property(nonatomic,assign)NSTimeInterval fps;
+@property(nonatomic,assign)NSTimeInterval timebase;
+@property(nonatomic,assign)BOOL enableVideoToolbox;//是否允许videoToolbox解码
+@property(nonatomic,assign)BOOL videoToolBoxDidOpen;//videoToolbox初始化成功
+@property(nonatomic,assign)BOOL ffmpegDecodeAsync;//ffmpeg异步解码
+
+@property(nonatomic,assign)NSInteger videoToolBoxMaxDecodeFrameCount;
+@property(nonatomic,assign)NSInteger codecContextMaxDecodeFrameCount;
+
 @property(nonatomic,strong)KKFFPacketQueue *packetQueue;//原始数据队列
 @property(nonatomic,strong)KKFFFrameQueue *frameQueue;//已解码队列
-@property(nonatomic,strong)KKFFFramePool *framePool;//重用池，避免重复创建帧浪费性能资源，程序从重用池中获取帧并初始化并加入到frameQueue红
+@property(nonatomic,strong)KKFFFramePool *framePool;//重用池，避免重复创建帧浪费性能资源，程序从重用池中获取帧并初始化并加入到frameQueue中
 @property(nonatomic,strong)KKFFVideoToolBox *videoToolBox;
 @property(nonatomic,strong)KKWaterMarkTool *waterMarkTool;
 @end
@@ -35,14 +44,14 @@ static AVPacket flushPacket;
                                timebase:(NSTimeInterval)timebase
                                     fps:(NSTimeInterval)fps
                       ffmpegDecodeAsync:(BOOL)ffmpegDecodeAsync
-                      videoToolBoxAsync:(BOOL)videoToolBoxAsync
+                     enableVideoToolbox:(BOOL)enableVideoToolbox
                              rotateType:(KKFFVideoFrameRotateType)rotateType
                                delegate:(id<KKFFVideoDecoderDlegate>)delegate{
     return [[self alloc] initWithCodecContext:codecContext
                                      timebase:timebase
                                           fps:fps
                             ffmpegDecodeAsync:ffmpegDecodeAsync
-                            videoToolBoxAsync:videoToolBoxAsync
+                           enableVideoToolbox:enableVideoToolbox
                                    rotateType:rotateType
                                      delegate:delegate];
 }
@@ -51,7 +60,7 @@ static AVPacket flushPacket;
                             timebase:(NSTimeInterval)timebase
                                  fps:(NSTimeInterval)fps
                    ffmpegDecodeAsync:(BOOL)ffmpegDecodeAsync
-                   videoToolBoxAsync:(BOOL)videoToolBoxAsync
+                  enableVideoToolbox:(BOOL)enableVideoToolbox
                           rotateType:(KKFFVideoFrameRotateType)rotateType
                             delegate:(id<KKFFVideoDecoderDlegate>)delegate{
     if (self = [super init]) {
@@ -66,7 +75,7 @@ static AVPacket flushPacket;
         self->_timebase = timebase;
         self->_fps = fps;
         self->_ffmpegDecodeAsync = ffmpegDecodeAsync;
-        self->_videoToolBoxAsync = videoToolBoxAsync;
+        self->_enableVideoToolbox = enableVideoToolbox;
         self->_rotateType = rotateType;
         [self.waterMarkTool setupFilters:@"drawtext=Helvetica:fontcolor=green:fontsize=30:text='KKFinger'" videoCodecCtx:codecContext];
         [self setupFrameQueue];
@@ -75,9 +84,9 @@ static AVPacket flushPacket;
 }
 
 - (void)dealloc{
-    if (_tempFrame) {
-        av_free(_tempFrame);
-        _tempFrame = NULL;
+    if (_decodeFrame) {
+        av_free(_decodeFrame);
+        _decodeFrame = NULL;
     }
     [self destroy];
     KKPlayerLog(@"KKFFVideoDecoder release");
@@ -86,16 +95,16 @@ static AVPacket flushPacket;
 #pragma mark -- 初始化数据队列相关数据
 
 - (void)setupFrameQueue{
-    self->_tempFrame = av_frame_alloc();
+    self->_decodeFrame = av_frame_alloc();
     self.videoToolBoxMaxDecodeFrameCount = 20;
     self.codecContextMaxDecodeFrameCount = 3;
-    if (self.videoToolBoxAsync && _codecContext->codec_id == AV_CODEC_ID_H264) {
+    if (self.enableVideoToolbox && _codecContext->codec_id == AV_CODEC_ID_H264) {
         //h264,使用videotoolbox硬件加速
         self.videoToolBox = [KKFFVideoToolBox videoToolBoxWithCodecContext:self->_codecContext];
         if ([self.videoToolBox trySetupVTSession]) {
             self->_videoToolBoxDidOpen = YES;
         } else {
-            [self.videoToolBox flush];
+            [self.videoToolBox clean];
             self.videoToolBox = nil;
         }
     }
@@ -104,38 +113,35 @@ static AVPacket flushPacket;
         self.framePool = [KKFFFramePool poolWithCapacity:10 frameClass:[KKFFCVYUVVideoFrame class]];
         self.frameQueue = [KKFFFrameQueue frameQueue];
         self.frameQueue.minFrameCountThreshold = 4;
-        self->_decodeAsync = YES;
     } else if (self.ffmpegDecodeAsync) {
-        self.frameQueue = [KKFFFrameQueue frameQueue];
         self.framePool = [KKFFFramePool videoPool];
-        self->_decodeAsync = YES;
+        self.frameQueue = [KKFFFrameQueue frameQueue];
     } else {
         self.framePool = [KKFFFramePool videoPool];
-        self->_decodeSync = YES;
         self->_decodeOnMainThread = YES;
     }
 }
 
 #pragma mark -- 获取音视频帧
 
-- (KKFFVideoFrame *)getFirstPositionFrame{
+- (KKFFVideoFrame *)headFrame{
     if (self.videoToolBoxDidOpen || self.ffmpegDecodeAsync) {
-        return [self.frameQueue getFirstFrameWithNoBlocking];
+        return [self.frameQueue headFrameWithNoBlocking];
     } else {
-        return [self ffmpegDecodeSync];
+        return [self ffmpegDecodeImmediately];
     }
 }
 
-- (KKFFVideoFrame *)getFrameAtPosition:(NSTimeInterval)position{
+- (KKFFVideoFrame *)frameAtPosition:(NSTimeInterval)position{
     if (self.videoToolBoxDidOpen || self.ffmpegDecodeAsync) {
         NSMutableArray <KKFFFrame *> *discardFrames = nil;
-        KKFFVideoFrame *videoFrame = [self.frameQueue getFrameWithNoBlockingAtPosistion:position discardFrames:&discardFrames];
+        KKFFVideoFrame *videoFrame = [self.frameQueue frameWithNoBlockingAtPosistion:position discardFrames:&discardFrames];
         for (KKFFVideoFrame *obj in discardFrames) {
             [obj cancel];
         }
         return videoFrame;
     } else {
-        return [self ffmpegDecodeSync];
+        return [self ffmpegDecodeImmediately];
     }
 }
 
@@ -143,7 +149,7 @@ static AVPacket flushPacket;
 
 - (void)discardFrameBeforPosition:(NSTimeInterval)position{
     if (self.videoToolBoxDidOpen || self.ffmpegDecodeAsync) {
-        NSMutableArray <KKFFFrame *> *discardFrames = [self.frameQueue discardFrameBeforPosition:position];
+        NSMutableArray <KKFFFrame *> *discardFrames = [self.frameQueue discardFrameBeforePosition:position];
         for (KKFFVideoFrame *obj in discardFrames) {
             [obj cancel];
         }
@@ -164,24 +170,21 @@ static AVPacket flushPacket;
 
 - (void)startDecodeThread{
     if (self.videoToolBoxDidOpen) {
-        [self videoToolBoxDecodeAsyncThread];
+        [self videoToolBoxDecodeWaitIfNeed];
     } else if (self.ffmpegDecodeAsync) {
-        [self ffmpegDecodeAsyncThread];
+        [self ffmpegDecodeWaitIfNeed];
     }
 }
 
-#pragma mark -- ffmpeg解码，异步
+#pragma mark -- ffmpeg解码，当packet队列为空时堵塞等待
 
-- (void)ffmpegDecodeAsyncThread{
+- (void)ffmpegDecodeWaitIfNeed{
     while (YES) {
-        if (!self.ffmpegDecodeAsync) {
-            break;
-        }
         if (self.canceled || self.error) {
             KKPlayerLog(@"decode video thread quit");
             break;
         }
-        if (self.endOfFile && self.packetQueue.count <= 0) {
+        if (self.readPacketFinish && self.packetQueue.count <= 0) {
             KKPlayerLog(@"decode video finished");
             break;
         }
@@ -200,7 +203,7 @@ static AVPacket flushPacket;
         if (packet.data == flushPacket.data) {
             KKPlayerLog(@"video codec flush");
             avcodec_flush_buffers(_codecContext);
-            [self.frameQueue flush];
+            [self.frameQueue clean];
             continue;
         }
         
@@ -215,14 +218,14 @@ static AVPacket flushPacket;
             }
         } else {
             while (result >= 0) {
-                result = avcodec_receive_frame(_codecContext, _tempFrame);
+                result = avcodec_receive_frame(_codecContext, _decodeFrame);
                 if (result < 0) {
                     if (result != AVERROR(EAGAIN) && result != AVERROR_EOF) {
                         self->_error = KKFFCheckError(result);
                         [self delegateErrorCallback];
                     }
                 } else {
-                    videoFrame = [self videoFrameFromTempFrame:packet.size];
+                    videoFrame = [self videoFrameFromDecodedFrame:packet.size];
                     if (videoFrame) {
                         [self.frameQueue putSortFrame:videoFrame];
                     }
@@ -233,16 +236,16 @@ static AVPacket flushPacket;
     }
 }
 
-#pragma mark -- ffmpeg解码，同步
+#pragma mark -- ffmpeg解码，当packet队列为空时不等待，直接返回
 
-- (KKFFVideoFrame *)ffmpegDecodeSync{
+- (KKFFVideoFrame *)ffmpegDecodeImmediately{
     if (self.canceled || self.error) {
         return nil;
     }
     if (self.paused) {
         return nil;
     }
-    if (self.endOfFile && self.packetQueue.count <= 0) {
+    if (self.readPacketFinish && self.packetQueue.count <= 0) {
         return nil;
     }
     
@@ -264,14 +267,14 @@ static AVPacket flushPacket;
         }
     } else {
         while (result >= 0) {
-            result = avcodec_receive_frame(_codecContext, _tempFrame);
+            result = avcodec_receive_frame(_codecContext, _decodeFrame);
             if (result < 0) {
                 if (result != AVERROR(EAGAIN) && result != AVERROR_EOF) {
                     self->_error = KKFFCheckError(result);
                     [self delegateErrorCallback];
                 }
             } else {
-                videoFrame = [self videoFrameFromTempFrame:packet.size];
+                videoFrame = [self videoFrameFromDecodedFrame:packet.size];
             }
         }
     }
@@ -280,39 +283,41 @@ static AVPacket flushPacket;
     return videoFrame;
 }
 
-- (KKFFAVYUVVideoFrame *)videoFrameFromTempFrame:(int)packetSize{
-    if (!_tempFrame->data[0] || !_tempFrame->data[1] || !_tempFrame->data[2]){
+- (KKFFAVYUVVideoFrame *)videoFrameFromDecodedFrame:(int)packetSize{
+    if (!_decodeFrame->data[0] || !_decodeFrame->data[1] || !_decodeFrame->data[2]){
         return nil;
     }
     
-//    if (av_buffersrc_add_frame(self.waterMarkTool->buffersrcCtx, _tempFrame) < 0) {
-//        NSLog(@"Error while feeding the filtergraph\n");
-//    }
-//
-//    int ret = av_buffersink_get_frame(self.waterMarkTool->buffersinkCtx, _tempFrame);
-//    if (ret < 0){
-//        NSLog(@"Error while feeding the filtergraph\n");
-//    }
+    //    if (av_buffersrc_add_frame(self.waterMarkTool->buffersrcCtx, _tempFrame) < 0) {
+    //        NSLog(@"Error while feeding the filtergraph\n");
+    //    }
+    //
+    //    int ret = av_buffersink_get_frame(self.waterMarkTool->buffersinkCtx, _tempFrame);
+    //    if (ret < 0){
+    //        NSLog(@"Error while feeding the filtergraph\n");
+    //    }
     
     KKFFAVYUVVideoFrame *videoFrame = [self.framePool getUnuseFrame];
-    [videoFrame setFrameData:_tempFrame width:_codecContext->width height:_codecContext->height];
-    videoFrame.position = av_frame_get_best_effort_timestamp(_tempFrame) * self.timebase;
+    [videoFrame setFrameData:_decodeFrame width:_codecContext->width height:_codecContext->height];
     videoFrame.packetSize = packetSize;
     videoFrame.rotateType = self.rotateType;
     
-    const int64_t frame_duration = av_frame_get_pkt_duration(_tempFrame);
+    //根据time_base获得音频帧的真实的位置和时长，这一步很重要，会直接影响播放时的音视频同步问题
+    const int64_t frame_duration = av_frame_get_pkt_duration(_decodeFrame);
     if (frame_duration) {
         videoFrame.duration = frame_duration * self.timebase;
-        videoFrame.duration += _tempFrame->repeat_pict * self.timebase * 0.5;
+        videoFrame.duration += _decodeFrame->repeat_pict * self.timebase * 0.5;
     } else {
         videoFrame.duration = 1.0 / self.fps;
     }
+    videoFrame.position = av_frame_get_best_effort_timestamp(_decodeFrame) * self.timebase;
+    
     return videoFrame;
 }
 
 #pragma mark -- VideoToolBox，硬件加速
 
-- (void)videoToolBoxDecodeAsyncThread{
+- (void)videoToolBoxDecodeWaitIfNeed{
     while (YES) {
         if (!self.videoToolBoxDidOpen) {
             break;
@@ -321,7 +326,7 @@ static AVPacket flushPacket;
             KKPlayerLog(@"decode video thread quit");
             break;
         }
-        if (self.endOfFile && self.packetQueue.count <= 0) {
+        if (self.readPacketFinish && self.packetQueue.count <= 0) {
             KKPlayerLog(@"decode video finished");
             break;
         }
@@ -339,34 +344,23 @@ static AVPacket flushPacket;
         AVPacket packet = [self.packetQueue getPacketWithBlocking];
         if (packet.data == flushPacket.data) {
             KKPlayerLog(@"video codec flush");
-            [self.frameQueue flush];
-            [self.videoToolBox flush];
+            [self.frameQueue clean];
+            [self.videoToolBox clean];
             continue;
         }
         
         if (packet.stream_index < 0 || packet.data == NULL) continue;
         
         KKFFVideoFrame *videoFrame = nil;
-        BOOL vtbEnable = [self.videoToolBox trySetupVTSession];
-        if (vtbEnable) {
-            BOOL needFlush = NO;
-            BOOL result = [self.videoToolBox sendPacket:packet needFlush:&needFlush];
-            if (result) {
-                videoFrame = [self videoFrameFromVideoToolBox:packet];
-            } else if (needFlush) {
-                [self.videoToolBox flush];
-                BOOL result2 = [self.videoToolBox sendPacket:packet needFlush:&needFlush];
-                if (result2) {
-                    videoFrame = [self videoFrameFromVideoToolBox:packet];
-                }
-            }
+        BOOL result = [self.videoToolBox sendPacket:packet];
+        if (result) {
+            videoFrame = [self videoFrameFromVideoToolBox:packet];
         }
         if (videoFrame) {
             [self.frameQueue putSortFrame:videoFrame];
         }
         av_packet_unref(&packet);
     }
-    self.frameQueue.ignoreMinFrameCountThresholdLimit = YES;
 }
 
 - (KKFFVideoFrame *)videoFrameFromVideoToolBox:(AVPacket)packet{
@@ -411,10 +405,10 @@ static AVPacket flushPacket;
  在AVPacket队列中加入flushPacket，解码线程将AVPacket队列中的数据取出时，如果是flushPacket，则将
  AVCodecContext的缓冲清理，不清理AVCodecContext的缓冲会造成播放画面卡主不动的问题
  */
-- (void)flush{
-    [self.packetQueue flush];
-    [self.frameQueue flush];
-    [self.framePool flush];
+- (void)clean{
+    [self.packetQueue clean];
+    [self.frameQueue clean];
+    [self.framePool clean];
     [self putPacket:flushPacket];
 }
 

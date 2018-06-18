@@ -21,10 +21,10 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
     AVCodecContext *_codecContext;
 }
 @property(nonatomic)CMFormatDescriptionRef formatDescription ;
-@property(nonatomic)VTDecompressionSessionRef vtSession ;
+@property(nonatomic)VTDecompressionSessionRef decodeSession ;
 @property(nonatomic)CVImageBufferRef decodedBuffer ;
 @property(nonatomic,assign)OSStatus decodeStatus ;
-@property(nonatomic,assign)BOOL vtSessionToken;
+@property(nonatomic,assign)BOOL sessionEnable;
 @property(nonatomic,assign)BOOL needConvertNALSize3To4;
 @end
 
@@ -42,19 +42,20 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
 }
 
 - (void)dealloc{
-    [self flush];
+    [self clean];
+    NSLog(@"%@ dealloc-----",NSStringFromClass([self class]));
 }
 
 #pragma mark -- 初始化
 
 - (BOOL)trySetupVTSession{
-    if (!self.vtSessionToken) {
+    if (!self.sessionEnable) {
         NSError *error = [self setupVTSession];
         if (!error) {
-            self.vtSessionToken = YES;
+            self.sessionEnable = YES;
         }
     }
-    return self.vtSessionToken;
+    return self.sessionEnable;
 }
 
 - (NSError *)setupVTSession{
@@ -89,7 +90,7 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
             outputCallbackRecord.decompressionOutputCallback = outputCallback;
             outputCallbackRecord.decompressionOutputRefCon = (__bridge void *)self;
             
-            OSStatus status = VTDecompressionSessionCreate(kCFAllocatorDefault, self->_formatDescription, NULL, destinationPixelBufferAttributes, &outputCallbackRecord, &self->_vtSession);
+            OSStatus status = VTDecompressionSessionCreate(kCFAllocatorDefault, self->_formatDescription, NULL, destinationPixelBufferAttributes, &outputCallbackRecord, &self->_decodeSession);
             if (status != noErr) {
                 error = [NSError errorWithDomain:@"create session error" code:KKFFVideoToolBoxErrorCodeCreateSession userInfo:nil];
                 return error;
@@ -110,7 +111,7 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
 
 #pragma mark -- 将原始的音视频数据加入到数据队列
 
-- (BOOL)sendPacket:(AVPacket)packet needFlush:(BOOL *)needFlush{
+- (BOOL)sendPacket:(AVPacket)packet {
     
     BOOL setupResult = [self trySetupVTSession];
     
@@ -149,14 +150,14 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
         CMSampleBufferRef sampleBuffer = NULL;
         status = CMSampleBufferCreate( NULL, blockBuffer, TRUE, 0, 0, self->_formatDescription, 1, 0, NULL, 0, NULL, &sampleBuffer);
         if (status == noErr) {
-            //解码成功之后，会触发回调
-            status = VTDecompressionSessionDecodeFrame(self->_vtSession, sampleBuffer, 0, NULL, 0);
+            //解码成功之后，会触发回调,注意，只有执行完回调后才会执行VTDecompressionSessionDecodeFrame后的代码
+            status = VTDecompressionSessionDecodeFrame(self->_decodeSession, sampleBuffer, 0, NULL, 0);
             if (status == noErr) {
                 if (self->_decodeStatus == noErr && self->_decodedBuffer != NULL) {
                     result = YES;
                 }
             } else if (status == kVTInvalidSessionErr) {
-                *needFlush = YES;
+                [self clean];
             }
         }
         if (sampleBuffer) {
@@ -183,14 +184,14 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
         CFRelease(self->_formatDescription);
         self->_formatDescription = NULL;
     }
-    if (self->_vtSession) {
-        VTDecompressionSessionWaitForAsynchronousFrames(self->_vtSession);
-        VTDecompressionSessionInvalidate(self->_vtSession);
-        CFRelease(self->_vtSession);
-        self->_vtSession = NULL;
+    if (self->_decodeSession) {
+        VTDecompressionSessionWaitForAsynchronousFrames(self->_decodeSession);
+        VTDecompressionSessionInvalidate(self->_decodeSession);
+        CFRelease(self->_decodeSession);
+        self->_decodeSession = NULL;
     }
     self.needConvertNALSize3To4 = NO;
-    self.vtSessionToken = NO;
+    self.sessionEnable = NO;
 }
 
 - (void)cleanDecodeInfo{
@@ -201,7 +202,7 @@ typedef NS_ENUM(NSUInteger, KKFFVideoToolBoxErrorCode) {
     //}
 }
 
-- (void)flush{
+- (void)clean{
     [self cleanVTSession];
     [self cleanDecodeInfo];
 }

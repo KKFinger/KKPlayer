@@ -54,7 +54,7 @@
 - (void)destroy;
 
 - (BOOL)seekEnable;
-- (void)seekFileWithFFTimebase:(NSTimeInterval)time;
+- (void)seekFileWithSecond:(NSTimeInterval)second;
 
 - (int)readFrame:(AVPacket *)packet;
 

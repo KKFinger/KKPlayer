@@ -47,13 +47,8 @@
 @property(nonatomic,assign)NSTimeInterval minBufferedDruation;//最小的缓冲时间
 
 @property(nonatomic,assign,readonly)BOOL buffering;
-@property(nonatomic,assign,readonly)BOOL decodeFinished;
-@property(atomic,assign,readonly)BOOL stopDecode;
-@property(atomic,assign,readonly)BOOL endOfFile;
-@property(atomic,assign,readonly)BOOL paused;
-@property(atomic,assign,readonly)BOOL seeking;
 @property(nonatomic,assign,readonly)BOOL seekEnable;
-@property(atomic,assign,readonly)BOOL prepareToDecode;
+@property(nonatomic,assign,readonly)BOOL prepareToDecode;
 @property(nonatomic,assign,readonly)BOOL videoDecodeOnMainThread;
 
 @property(nonatomic,assign,readonly)BOOL videoEnable;

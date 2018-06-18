@@ -42,21 +42,21 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
 
 @property(nonatomic,assign)BOOL buffering;
 @property(nonatomic,assign)BOOL decodeFinished;
-@property(atomic,assign)BOOL stopDecode;
-@property(atomic,assign)BOOL endOfFile;
-@property(atomic,assign)BOOL paused;
-@property(atomic,assign)BOOL seeking;
-@property(atomic,assign)BOOL prepareToDecode;
+@property(nonatomic,assign)BOOL stopDecode;
+@property(nonatomic,assign)BOOL readPacketFinish;
+@property(nonatomic,assign)BOOL paused;
+@property(nonatomic,assign)BOOL seeking;
+@property(nonatomic,assign)BOOL prepareToDecode;
 
 @property(nonatomic,copy)void(^seekCompleteHandler)(BOOL finished);
 
-@property(atomic,assign)NSTimeInterval audioFrameUpdateTime;
-@property(atomic,assign)NSTimeInterval audioFramePosition;
-@property(atomic,assign)NSTimeInterval audioFrameDuration;
+@property(nonatomic,assign)NSTimeInterval audioFrameUpdateTime;
+@property(nonatomic,assign)NSTimeInterval audioFramePosition;
+@property(nonatomic,assign)NSTimeInterval audioFrameDuration;
 
-@property(atomic,assign)NSTimeInterval videoFrameUpdateTime;
-@property(atomic,assign)NSTimeInterval videoFramePosition;
-@property(atomic,assign)NSTimeInterval videoFrameDuration;
+@property(nonatomic,assign)NSTimeInterval videoFrameUpdateTime;
+@property(nonatomic,assign)NSTimeInterval videoFramePosition;
+@property(nonatomic,assign)NSTimeInterval videoFrameDuration;
 
 @end
 
@@ -138,10 +138,10 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
     self.buffering = NO;
     self.paused = NO;
     self.prepareToDecode = NO;
-    self.endOfFile = NO;
+    self.readPacketFinish = NO;
     self.decodeFinished = NO;
     self.videoDecoder.paused = NO;
-    self.videoDecoder.endOfFile = NO;
+    self.videoDecoder.readPacketFinish = NO;
     [self cleanAudioFrame];
     [self cleanVideoFrame];
 }
@@ -206,6 +206,7 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
         [self.delegate decoderDidPrepareToDecodeFrames:self];
     }
     
+    //注意,音视频的解码器的创建依赖于AVFormatContext，必须等AVFormatContext创建完成之后才能进行
     [self setupFFVideoDecoder];
     [self setupFFAudioDecoder];
 }
@@ -214,22 +215,14 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
 
 - (void)setupFFVideoDecoder{
     if (self.formatContext.videoEnable) {
-        self.videoDecoder = [KKFFVideoDecoder decoderWithCodecContext:self.formatContext->videoCodecContext
-                                                             timebase:self.formatContext.videoTimebase
-                                                                  fps:self.formatContext.videoFPS
-                                                    ffmpegDecodeAsync:[self.videoDecodeConfigDelegate decoderVideoConfigAVCodecContextDecodeAsync]
-                                                    videoToolBoxAsync:YES
-                                                           rotateType:self.formatContext.videoFrameRotateType
-                                                             delegate:self];
+        self.videoDecoder = [KKFFVideoDecoder decoderWithCodecContext:self.formatContext->videoCodecContext timebase:self.formatContext.videoTimebase fps:self.formatContext.videoFPS ffmpegDecodeAsync:[self.videoDecodeConfigDelegate decoderVideoConfigAVCodecContextDecodeAsync] enableVideoToolbox:YES rotateType:self.formatContext.videoFrameRotateType delegate:self];
     }
     [self startVideoDecoderOperation];
 }
 
 - (void)setupFFAudioDecoder{
     if (self.formatContext.audioEnable) {
-        self.audioDecoder = [KKFFAudioDecoder decoderWithCodecContext:self.formatContext->audioCodecContext
-                                                             timebase:self.formatContext.audioTimebase
-                                                             sampleRate:[self.audioDecodeConfigDelegate decoderAudioConfigGetSamplingRate] channelCount:[self.audioDecodeConfigDelegate decoderAudioConfigGetNumberOfChannels]];
+        self.audioDecoder = [KKFFAudioDecoder decoderWithCodecContext:self.formatContext->audioCodecContext timebase:self.formatContext.audioTimebase sampleRate:[self.audioDecodeConfigDelegate decoderAudioConfigGetSamplingRate] channelCount:[self.audioDecodeConfigDelegate decoderAudioConfigGetNumberOfChannels]];
     }
 }
 
@@ -273,26 +266,26 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
     [self cleanAudioFrame];
     [self cleanVideoFrame];
     
-    [self.videoDecoder flush];
-    [self.audioDecoder flush];
+    [self.videoDecoder clean];
+    [self.audioDecoder clean];
     
     AVPacket packet;
-    BOOL finished = NO;
-    while (!finished) {
+    BOOL readFinish = NO;
+    while (!readFinish) {
         if (self.stopDecode || self.error) {
             KKPlayerLog(@"read packet thread quit");
             break;
         }
         if (self.seeking) {
             
-            [self.formatContext seekFileWithFFTimebase:self.seekToTime];
+            [self.formatContext seekFileWithSecond:self.seekToTime];
             
-            [self.audioDecoder flush];
-            [self.videoDecoder flush];
-            self.videoDecoder.paused = NO;
-            self.videoDecoder.endOfFile = NO;
+            [self.audioDecoder clean];
+            [self.videoDecoder clean];
+            [self.videoDecoder setPaused:NO];
+            [self.videoDecoder setReadPacketFinish:NO];
             
-            self.endOfFile = NO;
+            self.readPacketFinish = NO;
             self.decodeFinished = NO;
             self.buffering = YES;
             self.seeking = NO;
@@ -327,9 +320,9 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
         int result = [self.formatContext readFrame:&packet];
         if (result < 0){
             KKPlayerLog(@"read packet finished");
-            self.endOfFile = YES;
-            self.videoDecoder.endOfFile = YES;
-            finished = YES;
+            self.readPacketFinish = YES;
+            self.videoDecoder.readPacketFinish = YES;
+            readFinish = YES;
             if ([self.delegate respondsToSelector:@selector(decoderDidEndOfFile:)]) {
                 [self.delegate decoderDidEndOfFile:self];
             }
@@ -387,7 +380,7 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
     self.videoDecoder.paused = YES;
     
     //正常播放结束，重新开始读取媒体数据和解码
-    if (self.endOfFile) {
+    if (self.readPacketFinish) {
         [self setupReadPacketOperation];
         [self startVideoDecoderOperation];
     }
@@ -401,19 +394,16 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
         return nil;
     }
     if (self.audioDecoder.frameQueueEmpty) {
-        [self updateBufferedDuration];
-        [self updateProgress];
         return nil;
     }
-    KKFFAudioFrame *audioFrame = [self.audioDecoder getFrameWithBlocking];
+    KKFFAudioFrame *audioFrame = [self.audioDecoder frameWithBlocking];
     if (!audioFrame) return nil;
     self.audioFramePosition = audioFrame.position;
     self.audioFrameDuration = audioFrame.duration;
+    self.audioFrameUpdateTime = [NSDate date].timeIntervalSince1970;
 
     [self updateBufferedDuration];
     [self updateProgress];
-    
-    self.audioFrameUpdateTime = [NSDate date].timeIntervalSince1970;
     
     return audioFrame;
 }
@@ -435,28 +425,28 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
         return nil;
     }
     
-    NSTimeInterval updateTime = [NSDate date].timeIntervalSince1970;
+    NSTimeInterval nowTime = [NSDate date].timeIntervalSince1970;
     KKFFVideoFrame *videoFrame = nil;
     if (self.formatContext.audioEnable){
         //优先使用音频的时间来同步音视频的播放
         if (self.videoFrameUpdateTime < 0) {
-            videoFrame = [self.videoDecoder getFirstPositionFrame];
+            videoFrame = [self.videoDecoder headFrame];
         } else {
             NSTimeInterval audioUpdateTime = self.audioFrameUpdateTime;
-            NSTimeInterval audioTimeOffset = updateTime - audioUpdateTime;
-            NSTimeInterval audioPositionReal = self.audioFramePosition + audioTimeOffset;
-            NSTimeInterval currentReal = currentPostion + currentDuration;
-            if (currentReal <= audioPositionReal) {
-                videoFrame = [self.videoDecoder getFrameAtPosition:currentPostion];
+            NSTimeInterval audioTimeOffset = nowTime - audioUpdateTime;
+            NSTimeInterval audioPositionNow = self.audioFramePosition + audioTimeOffset;
+            NSTimeInterval currentNow = currentPostion + currentDuration;
+            if (currentNow <= audioPositionNow) {
+                videoFrame = [self.videoDecoder frameAtPosition:currentPostion];
             }
         }
     }else if (self.formatContext.videoEnable){
-        if (self.videoFrameUpdateTime < 0 || updateTime >= self.videoFrameUpdateTime + self.videoFrameDuration) {
-            videoFrame = [self.videoDecoder getFirstPositionFrame];
+        if (self.videoFrameUpdateTime < 0 || nowTime >= self.videoFrameUpdateTime + self.videoFrameDuration) {
+            videoFrame = [self.videoDecoder headFrame];
         }
     }
     if (videoFrame) {
-        self.videoFrameUpdateTime = updateTime;
+        self.videoFrameUpdateTime = nowTime;
         self.videoFramePosition = videoFrame.position;
         self.videoFrameDuration = videoFrame.duration;
 
@@ -483,11 +473,11 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
 
 - (void)checkBufferingStatus{
     if (self.buffering) {
-        if (self.bufferedDuration >= self.minBufferedDruation || self.endOfFile) {
+        if (self.bufferedDuration >= self.minBufferedDruation || self.readPacketFinish) {
             self.buffering = NO;
         }
     } else {
-        if (self.bufferedDuration <= 0.2 && !self.endOfFile) {
+        if (self.bufferedDuration <= 0.2 && !self.readPacketFinish) {
             self.buffering = YES;
         }
     }
@@ -596,7 +586,7 @@ static NSTimeInterval maxPacketSleepFullAndPauseTimeInterval = 0.5;
         if ([self.delegate respondsToSelector:@selector(decoder:didChangeValueOfBufferedDuration:)]) {
             [self.delegate decoder:self didChangeValueOfBufferedDuration:_bufferedDuration];
         }
-        if (_bufferedDuration <= 0 && self.endOfFile) {
+        if (_bufferedDuration <= 0 && self.readPacketFinish) {
             self.decodeFinished = YES;
         }
         [self checkBufferingStatus];

@@ -20,7 +20,7 @@
 
 #pragma mark -- 将原始的音视频数据加入到数据队列
 
-- (BOOL)sendPacket:(AVPacket)packet needFlush:(BOOL *)needFlush;
+- (BOOL)sendPacket:(AVPacket)packet ;
 
 #pragma mark -- 解码后的数据
 
@@ -28,6 +28,6 @@
 
 #pragma mark -- 清理
 
-- (void)flush;
+- (void)clean;
 
 @end

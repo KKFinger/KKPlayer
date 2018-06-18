@@ -124,8 +124,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface KKPlayerInterface : NSObject
 @property(nonatomic,copy,readonly)NSURL *contentURL;
-@property(nonatomic,strong,readonly)NSMutableDictionary *formatContextOptions;
-@property(nonatomic,strong,readonly)NSMutableDictionary *codecContextOptions;
 @property(nonatomic,assign,readonly)KKVideoType videoType;
 @property(nonatomic,assign,readonly)KKDecoderType decoderType;
 @property(nonatomic,assign,readonly)KKMediaFormat mediaFormat;

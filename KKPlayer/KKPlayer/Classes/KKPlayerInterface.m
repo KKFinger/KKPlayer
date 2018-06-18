@@ -19,8 +19,6 @@
 @property(nonatomic,strong)KKFFPlayer *ffPlayer;
 
 @property(nonatomic,copy)NSURL *contentURL;
-@property(nonatomic,strong)NSMutableDictionary *formatContextOptions;
-@property(nonatomic,strong)NSMutableDictionary *codecContextOptions;
 @property(nonatomic,assign)KKVideoType videoType;
 @property(nonatomic,assign)KKDecoderType decoderType;
 @property(nonatomic,assign)KKDisplayType displayType;
@@ -43,7 +41,6 @@
 - (instancetype)init{
     if (self = [super init]) {
         [self setupNotification];
-        [self configFFmpegOptions];
         self.contentURL = nil;
         self.videoType = KKVideoTypeNormal;
         self.backgroundMode = KKPlayerBackgroundModeAutoPlayAndPause;
@@ -264,49 +261,6 @@
         }
             break;
     }
-}
-
-#pragma mark -- ffmpeg配置
-
-- (void)configFFmpegOptions{
-    self.formatContextOptions = [NSMutableDictionary dictionary];
-    self.codecContextOptions = [NSMutableDictionary dictionary];
-    
-    [self setFFmpegFormatContextOptionStringValue:@"KKPlayer" forKey:@"user-agent"];
-    [self setFFmpegFormatContextOptionIntValue:20 * 1000 * 1000 forKey:@"timeout"];
-    [self setFFmpegFormatContextOptionIntValue:1 forKey:@"reconnect"];
-}
-
-- (NSDictionary *)ffmpegFormatContextOptions{
-    return [self.formatContextOptions copy];
-}
-
-- (void)setFFmpegFormatContextOptionIntValue:(int64_t)value forKey:(NSString *)key{
-    [self.formatContextOptions setValue:@(value) forKey:key];
-}
-
-- (void)setFFmpegFormatContextOptionStringValue:(NSString *)value forKey:(NSString *)key{
-    [self.formatContextOptions setValue:value forKey:key];
-}
-
-- (void)removeFFmpegFormatContextOptionForKey:(NSString *)key{
-    [self.formatContextOptions removeObjectForKey:key];
-}
-
-- (NSDictionary *)ffmpegCodecContextOptions{
-    return [self.codecContextOptions copy];
-}
-
-- (void)setFFmpegCodecContextOptionIntValue:(int64_t)value forKey:(NSString *)key{
-    [self.codecContextOptions setValue:@(value) forKey:key];
-}
-
-- (void)setFFmpegCodecContextOptionStringValue:(NSString *)value forKey:(NSString *)key{
-    [self.codecContextOptions setValue:value forKey:key];
-}
-
-- (void)removeFFmpegCodecContextOptionForKey:(NSString *)key{
-    [self.codecContextOptions removeObjectForKey:key];
 }
 
 #pragma mark -- @property getter & setter

@@ -25,6 +25,7 @@
 
 - (void)dealloc{
     [self destroy];
+    NSLog(@"%@ dealloc-----",NSStringFromClass([self class]));
 }
 
 - (instancetype)initWithTimebase:(NSTimeInterval)timebase{
@@ -125,7 +126,7 @@
     return self.packets.count;
 }
 
-- (void)flush{
+- (void)clean{
     [self.condition lock];
     
     for (NSValue *value in self.packets) {
@@ -142,7 +143,7 @@
 }
 
 - (void)destroy{
-    [self flush];
+    [self clean];
     [self.condition lock];
     self.destoryToken = YES;
     [self.condition broadcast];

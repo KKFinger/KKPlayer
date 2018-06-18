@@ -19,7 +19,7 @@
 
 #pragma mark -- 获取解码后的音频数据
 
-- (KKFFAudioFrame *)getFrameWithBlocking;
+- (KKFFAudioFrame *)frameWithBlocking;
 
 #pragma mark -- 将原始的音频帧数据加到队列中
 
@@ -27,7 +27,7 @@
 
 #pragma mark -- 清理
 
-- (void)flush;
+- (void)clean;
 - (void)destroy;
 
 @end

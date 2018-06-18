@@ -21,38 +21,26 @@
 @property(nonatomic,weak)id<KKFFVideoDecoderDlegate>delegate;
 
 @property(nonatomic,strong,readonly)NSError *error;
-@property(nonatomic,assign,readonly)NSTimeInterval timebase;
-@property(nonatomic,assign,readonly)NSTimeInterval fps;
 @property(nonatomic,assign,readonly)KKFFVideoFrameRotateType rotateType;
 @property(nonatomic,assign,readonly)NSInteger packetSize;
 @property(nonatomic,assign,readonly)NSTimeInterval duration;
-
-@property(nonatomic,assign)NSInteger videoToolBoxMaxDecodeFrameCount;
-@property(nonatomic,assign)NSInteger codecContextMaxDecodeFrameCount;
-
-@property(nonatomic,assign,readonly)BOOL videoToolBoxAsync;
-@property(nonatomic,assign,readonly)BOOL videoToolBoxDidOpen;
-
-@property(nonatomic,assign,readonly)BOOL ffmpegDecodeAsync;
-@property(nonatomic,assign,readonly)BOOL decodeSync;
-@property(nonatomic,assign,readonly)BOOL decodeAsync;
-@property(nonatomic,assign,readonly)BOOL decodeOnMainThread;
 @property(nonatomic,assign,readonly)BOOL frameQueueEmpty;
+@property(nonatomic,assign,readonly)BOOL decodeOnMainThread;
 @property(nonatomic,assign)BOOL paused;
-@property(nonatomic,assign)BOOL endOfFile;
+@property(nonatomic,assign)BOOL readPacketFinish;
 
 + (instancetype)decoderWithCodecContext:(AVCodecContext *)codecContext
                                timebase:(NSTimeInterval)timebase
                                     fps:(NSTimeInterval)fps
                       ffmpegDecodeAsync:(BOOL)ffmpegDecodeAsync
-                      videoToolBoxAsync:(BOOL)videoToolBoxAsync
+                     enableVideoToolbox:(BOOL)enableVideoToolbox
                              rotateType:(KKFFVideoFrameRotateType)rotateType
                                delegate:(id <KKFFVideoDecoderDlegate>)delegate;
 
 #pragma mark -- 获取音视频帧
 
-- (KKFFVideoFrame *)getFirstPositionFrame;
-- (KKFFVideoFrame *)getFrameAtPosition:(NSTimeInterval)position;
+- (KKFFVideoFrame *)headFrame;
+- (KKFFVideoFrame *)frameAtPosition:(NSTimeInterval)position;
 
 #pragma mark -- 丢弃帧
 
@@ -64,7 +52,7 @@
 
 #pragma mark -- 销毁
 
-- (void)flush;
+- (void)clean;
 - (void)destroy;
 
 #pragma mark -- 解码线程

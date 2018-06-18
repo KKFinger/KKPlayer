@@ -12,7 +12,7 @@
 @property(nonatomic,assign)NSInteger decodedSize;
 @property(nonatomic,assign)NSInteger packetSize;
 @property(nonatomic,assign)NSUInteger count;
-@property(atomic,assign) NSTimeInterval duration;
+@property(atomic,assign)NSTimeInterval duration;
 @property(nonatomic,strong)NSCondition *condition;
 @property(nonatomic,strong)NSMutableArray<__kindof KKFFFrame *> *frames;
 @property(nonatomic,assign)BOOL destoryToken;
@@ -36,6 +36,7 @@
 
 - (void)dealloc{
     [self destroy];
+    NSLog(@"%@ dealloc-----",NSStringFromClass([self class]));
 }
 
 - (void)putFrame:(__kindof KKFFFrame *)frame{
@@ -81,7 +82,7 @@
 }
 
 //如果队列中没有frame则等待
-- (__kindof KKFFFrame *)getFirstFrameWithBlocking{
+- (__kindof KKFFFrame *)headFrameWithBlocking{
     [self.condition lock];
     while (self.frames.count < self.minFrameCountThreshold/*队列中的帧个数小于阈值*/ &&
            !(self.ignoreMinFrameCountThresholdLimit && self.frames.firstObject)/*队列不为空*/) {
@@ -121,7 +122,7 @@
 }
 
 //如果队列中没有frame则直接返回
-- (__kindof KKFFFrame *)getFirstFrameWithNoBlocking{
+- (__kindof KKFFFrame *)headFrameWithNoBlocking{
     [self.condition lock];
     if (self.destoryToken || self.frames.count <= 0) {
         [self.condition unlock];
@@ -154,12 +155,13 @@
     return frame;
 }
 
-- (NSTimeInterval)getFirstPositionWithNoBlocking{
+- (NSTimeInterval)headFramePositionWithNoBlocking{
     [self.condition lock];
     if (self.destoryToken || self.frames.count <= 0) {
         [self.condition unlock];
         return -1;
     }
+    //队列中的帧个数小于阈值
     if (!self.ignoreMinFrameCountThresholdLimit && self.frames.count < self.minFrameCountThreshold) {
         [self.condition unlock];
         return -1;
@@ -170,12 +172,13 @@
     return time;
 }
 
-- (__kindof KKFFFrame *)getFrameWithNoBlockingAtPosistion:(NSTimeInterval)position discardFrames:(NSMutableArray <__kindof KKFFFrame *> **)discardFrames{
+- (__kindof KKFFFrame *)frameWithNoBlockingAtPosistion:(NSTimeInterval)position discardFrames:(NSMutableArray <__kindof KKFFFrame *> **)discardFrames{
     [self.condition lock];
     if (self.destoryToken || self.frames.count <= 0) {
         [self.condition unlock];
         return nil;
     }
+    //队列中的帧个数小于阈值
     if (!self.ignoreMinFrameCountThresholdLimit && self.frames.count < self.minFrameCountThreshold) {
         [self.condition unlock];
         return nil;
@@ -269,7 +272,7 @@
     return self.frames.count;
 }
 
-- (void)flush{
+- (void)clean{
     [self.condition lock];
     [self.frames removeAllObjects];
     self.duration = 0;
@@ -280,7 +283,7 @@
 }
 
 - (void)destroy{
-    [self flush];
+    [self clean];
     [self.condition lock];
     self.destoryToken = YES;
     [self.condition broadcast];

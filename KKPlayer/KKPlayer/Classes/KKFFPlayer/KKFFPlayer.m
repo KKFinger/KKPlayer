@@ -29,6 +29,9 @@
 @property(nonatomic,assign)NSTimeInterval lastPostProgressTime;
 @property(nonatomic,assign)NSTimeInterval lastPostPlayableTime;
 
+@property(nonatomic,strong)NSMutableDictionary *formatContextOptions;
+@property(nonatomic,strong)NSMutableDictionary *codecContextOptions;
+
 @end
 
 @implementation KKFFPlayer
@@ -40,7 +43,6 @@
 - (instancetype)initWithPlayerInterface:(KKPlayerInterface *)playerInterface{
     if (self = [super init]) {
         self.playerInterface = playerInterface;
-        ((KKRenderView *)(self.playerInterface.videoRenderView)).renderFFmpegDelegate = self;
         self.stateLock = [[NSLock alloc] init];
         self.audioManager = [KKAudioManager manager];
         [self.audioManager registerAudioSession];
@@ -71,6 +73,9 @@
     self.prepareToken = NO;
     self.lastPostProgressTime = 0;
     self.lastPostPlayableTime = 0;
+    self.formatContextOptions = nil ;
+    self.codecContextOptions = nil ;
+    ((KKRenderView *)(self.playerInterface.videoRenderView)).renderFFmpegDelegate = nil ;
     ((KKRenderView *)(self.playerInterface.videoRenderView)).decodeType = KKDecoderTypeEmpty;
     ((KKRenderView *)(self.playerInterface.videoRenderView)).renderViewType = KKRenderViewTypeEmpty;
 }
@@ -91,17 +96,18 @@
 
 - (void)prepareVideo{
     
-    [self clean];
-    
     if (!self.playerInterface.contentURL) return;
+    
+    [self clean];
+    [self configFFmpegOptions];
     
     [((KKRenderView *)(self.playerInterface.videoRenderView)) setRenderFFmpegDelegate:self];
     [((KKRenderView *)(self.playerInterface.videoRenderView)) setDecodeType:KKDecoderTypeFFmpeg];
     [((KKRenderView *)(self.playerInterface.videoRenderView)) setRenderViewType:KKRenderViewTypeGLKView];
     
     self.decoder = [KKFFDecoder decoderWithContentURL:self.playerInterface.contentURL
-                                 formatContextOptions:self.playerInterface.formatContextOptions
-                                  codecContextOptions:self.playerInterface.codecContextOptions
+                                 formatContextOptions:self.formatContextOptions
+                                  codecContextOptions:self.codecContextOptions
                                              delegate:self
                            videoDecoderConfigDelegate:self
                            audioDecoderConfigDelegate:self];
@@ -129,6 +135,7 @@
             self.state = KKPlayerStateBuffering;
             break;
         case KKPlayerStateSuspend:
+        case KKPlayerStateSeeking:
             if (self.decoder.buffering) {
                 self.state = KKPlayerStateBuffering;
             } else {
@@ -156,7 +163,8 @@
         case KKPlayerStateReadyToPlay:
         case KKPlayerStateFinished:
         case KKPlayerStatePlaying:
-        case KKPlayerStateBuffering:{
+        case KKPlayerStateBuffering:
+        case KKPlayerStateSeeking:{
             self.state = KKPlayerStateSuspend;
         }
             break;
@@ -241,17 +249,6 @@
     [KKPlayerEventCenter raiseEvent:self.playerInterface error:error];
 }
 
-#pragma mark -- KKRenderFFmpegDelegate
-
-- (KKFFVideoFrame *)renderFrameWithCurrentPostion:(NSTimeInterval)currentPostion
-                                  currentDuration:(NSTimeInterval)currentDuration{
-    if (self.decoder) {
-        return [self.decoder fetchVideoFrameWithCurrentPostion:currentPostion
-                                               currentDuration:currentDuration];
-    }
-    return nil;
-}
-
 #pragma mark -- KKFFDecoderVideoConfigDelegate
 
 - (BOOL)decoderVideoConfigAVCodecContextDecodeAsync{
@@ -269,6 +266,17 @@
 
 - (UInt32)decoderAudioConfigGetNumberOfChannels{
     return self.audioManager.numberOfChannels;
+}
+
+#pragma mark -- KKRenderFFmpegDelegate,KKRenderView渲染视频时获取视频数据的入口
+
+- (KKFFVideoFrame *)renderFrameWithCurrentPostion:(NSTimeInterval)currentPostion
+                                  currentDuration:(NSTimeInterval)currentDuration{
+    if (self.decoder) {
+        return [self.decoder fetchVideoFrameWithCurrentPostion:currentPostion
+                                               currentDuration:currentDuration];
+    }
+    return nil;
 }
 
 #pragma mark -- KKAudioManagerDelegate,获取解码的音频数据，并使用AudioUnit播放
@@ -450,6 +458,17 @@
         return array;
     }
     return nil;
+}
+
+#pragma mark -- ffmpeg配置
+
+- (void)configFFmpegOptions{
+    self.formatContextOptions = [NSMutableDictionary dictionary];
+    self.codecContextOptions = [NSMutableDictionary dictionary];
+    
+    [self.formatContextOptions setObject:@"KKPlayer" forKey:@"user-agent"];
+    [self.formatContextOptions setObject:@(20 * 1000 * 1000) forKey:@"timeout"];
+    [self.formatContextOptions setObject:@(1) forKey:@"reconnect"];
 }
 
 @end
