@@ -11,7 +11,6 @@
 		145641F9202EFB3B008C1818 /* The Three Diablos.avi in Resources */ = {isa = PBXBuildFile; fileRef = 145641F5202EFB3B008C1818 /* The Three Diablos.avi */; };
 		1457535B202D72AC00EF4CEB /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1457535A202D72AC00EF4CEB /* CoreMotion.framework */; };
 		1457535D202D72B600EF4CEB /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1457535C202D72B600EF4CEB /* OpenGLES.framework */; };
-		5131A96220A848FC004DEB2F /* google-help-vr.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 5131A96120A848FC004DEB2F /* google-help-vr.mp4 */; };
 		5131A96420A85843004DEB2F /* i-see-fire.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 5131A96320A85843004DEB2F /* i-see-fire.mp4 */; };
 		9C02F6511E79293A00932489 /* PlayerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9C02F64F1E79293A00932489 /* PlayerViewController.m */; };
 		9C02F6521E79293A00932489 /* PlayerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9C02F6501E79293A00932489 /* PlayerViewController.xib */; };
@@ -34,7 +33,6 @@
 		145641F5202EFB3B008C1818 /* The Three Diablos.avi */ = {isa = PBXFileReference; lastKnownFileType = video.avi; name = "The Three Diablos.avi"; path = "../../demo-assset/The Three Diablos.avi"; sourceTree = "<group>"; };
 		1457535A202D72AC00EF4CEB /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
 		1457535C202D72B600EF4CEB /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
-		5131A96120A848FC004DEB2F /* google-help-vr.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "google-help-vr.mp4"; path = "../../demo-assset/google-help-vr.mp4"; sourceTree = "<group>"; };
 		5131A96320A85843004DEB2F /* i-see-fire.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = "i-see-fire.mp4"; path = "../../demo-assset/i-see-fire.mp4"; sourceTree = "<group>"; };
 		9C02F64E1E79293A00932489 /* PlayerViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlayerViewController.h; sourceTree = "<group>"; };
 		9C02F64F1E79293A00932489 /* PlayerViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PlayerViewController.m; sourceTree = "<group>"; };
@@ -117,7 +115,6 @@
 			isa = PBXGroup;
 			children = (
 				5131A96320A85843004DEB2F /* i-see-fire.mp4 */,
-				5131A96120A848FC004DEB2F /* google-help-vr.mp4 */,
 				145641F5202EFB3B008C1818 /* The Three Diablos.avi */,
 				9C886B971E78EC9F00F2CFD1 /* main.m */,
 			);
@@ -205,7 +202,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				9C886BA61E78EC9F00F2CFD1 /* LaunchScreen.storyboard in Resources */,
-				5131A96220A848FC004DEB2F /* google-help-vr.mp4 in Resources */,
 				9C886BA31E78EC9F00F2CFD1 /* Assets.xcassets in Resources */,
 				145641F9202EFB3B008C1818 /* The Three Diablos.avi in Resources */,
 				9C886BA11E78EC9F00F2CFD1 /* Main.storyboard in Resources */,

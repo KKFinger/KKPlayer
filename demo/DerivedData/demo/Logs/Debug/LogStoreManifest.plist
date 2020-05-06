@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>9</integer>
+	<key>logs</key>
+	<dict>
+		<key>069C0F89-0C2A-4821-958F-054E09BAFDC2</key>
+		<dict>
+			<key>className</key>
+			<string>DBGConsoleLog</string>
+			<key>documentTypeString</key>
+			<string>com.apple.dt.IDE.DebuggerLogContentType</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.DebugLog</string>
+			<key>fileName</key>
+			<string>069C0F89-0C2A-4821-958F-054E09BAFDC2.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>S</string>
+			<key>schemeIdentifier-containerName</key>
+			<string>demo-ios project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>demo-ios</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Debug KKPlayer</string>
+			<key>timeStartedRecording</key>
+			<real>571909551.28063905</real>
+			<key>timeStoppedRecording</key>
+			<real>571909714.29801595</real>
+			<key>title</key>
+			<string>Debug KKPlayer</string>
+			<key>uniqueIdentifier</key>
+			<string>069C0F89-0C2A-4821-958F-054E09BAFDC2</string>
+		</dict>
+		<key>2612C983-9DF2-47FA-A7AD-1C78C59201F2</key>
+		<dict>
+			<key>className</key>
+			<string>DBGConsoleLog</string>
+			<key>documentTypeString</key>
+			<string>com.apple.dt.IDE.DebuggerLogContentType</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.DebugLog</string>
+			<key>fileName</key>
+			<string>2612C983-9DF2-47FA-A7AD-1C78C59201F2.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>S</string>
+			<key>schemeIdentifier-containerName</key>
+			<string>demo-ios project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>demo-ios</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Debug KKPlayer</string>
+			<key>timeStartedRecording</key>
+			<real>571909449.35324705</real>
+			<key>timeStoppedRecording</key>
+			<real>571909487.62790096</real>
+			<key>title</key>
+			<string>Debug KKPlayer</string>
+			<key>uniqueIdentifier</key>
+			<string>2612C983-9DF2-47FA-A7AD-1C78C59201F2</string>
+		</dict>
+		<key>4040B00F-6DE1-4364-9CBE-BA6A204D2A5D</key>
+		<dict>
+			<key>className</key>
+			<string>DBGConsoleLog</string>
+			<key>documentTypeString</key>
+			<string>com.apple.dt.IDE.DebuggerLogContentType</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.DebugLog</string>
+			<key>fileName</key>
+			<string>4040B00F-6DE1-4364-9CBE-BA6A204D2A5D.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>S</string>
+			<key>schemeIdentifier-containerName</key>
+			<string>demo-ios project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>demo-ios</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Debug KKPlayer</string>
+			<key>timeStartedRecording</key>
+			<real>571909756.0819</real>
+			<key>timeStoppedRecording</key>
+			<real>571915708.98826897</real>
+			<key>title</key>
+			<string>Debug KKPlayer</string>
+			<key>uniqueIdentifier</key>
+			<string>4040B00F-6DE1-4364-9CBE-BA6A204D2A5D</string>
+		</dict>
+		<key>4E293B78-3B99-4626-8788-93671BA9166C</key>
+		<dict>
+			<key>className</key>
+			<string>DBGConsoleLog</string>
+			<key>documentTypeString</key>
+			<string>com.apple.dt.IDE.DebuggerLogContentType</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.DebugLog</string>
+			<key>fileName</key>
+			<string>4E293B78-3B99-4626-8788-93671BA9166C.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>S</string>
+			<key>schemeIdentifier-containerName</key>
+			<string>demo-ios project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>demo-ios</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Debug KKPlayer</string>
+			<key>timeStartedRecording</key>
+			<real>571909270.91325402</real>
+			<key>timeStoppedRecording</key>
+			<real>571909381.53740704</real>
+			<key>title</key>
+			<string>Debug KKPlayer</string>
+			<key>uniqueIdentifier</key>
+			<string>4E293B78-3B99-4626-8788-93671BA9166C</string>
+		</dict>
+		<key>989D395E-8704-4031-B3A6-D60704C6E1F8</key>
+		<dict>
+			<key>className</key>
+			<string>DBGConsoleLog</string>
+			<key>documentTypeString</key>
+			<string>com.apple.dt.IDE.DebuggerLogContentType</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.DebugLog</string>
+			<key>fileName</key>
+			<string>989D395E-8704-4031-B3A6-D60704C6E1F8.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>S</string>
+			<key>schemeIdentifier-containerName</key>
+			<string>demo-ios project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>demo-ios</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Debug KKPlayer</string>
+			<key>timeStartedRecording</key>
+			<real>571909382.50264502</real>
+			<key>timeStoppedRecording</key>
+			<real>571909420.01309204</real>
+			<key>title</key>
+			<string>Debug KKPlayer</string>
+			<key>uniqueIdentifier</key>
+			<string>989D395E-8704-4031-B3A6-D60704C6E1F8</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

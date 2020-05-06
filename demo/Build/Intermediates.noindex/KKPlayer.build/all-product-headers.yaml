@@ -1,0 +1,43 @@
+{
+  'version': 0,
+  'case-sensitive': 'false',
+  'roots': [
+    {
+      'type': 'directory',
+      'name': "/Users/kkfinger/Documents/GitHub/KKPlayer/demo/Build/Products/Debug-iphoneos/KKPlayer.framework/Headers",
+      'contents': [
+        {
+          'type': 'file',
+          'name': "KKPlayer-Swift.h",
+          'external-contents': "/Users/kkfinger/Documents/GitHub/KKPlayer/demo/Build/Products/Debug-iphoneos/KKPlayer.framework/Headers/KKPlayer-Swift.h"
+        },
+        {
+          'type': 'file',
+          'name': "KKPlayer.h",
+          'external-contents': "/Users/kkfinger/Documents/GitHub/KKPlayer/KKPlayer/KKPlayer/KKPlayer.h"
+        },
+        {
+          'type': 'file',
+          'name': "KKPlayerInterface.h",
+          'external-contents': "/Users/kkfinger/Documents/GitHub/KKPlayer/KKPlayer/KKPlayer/Classes/KKPlayerInterface.h"
+        },
+        {
+          'type': 'file',
+          'name': "KKPlayerTrack.h",
+          'external-contents': "/Users/kkfinger/Documents/GitHub/KKPlayer/KKPlayer/KKPlayer/Classes/KKPlayerTrack.h"
+        }
+      ]
+    },
+    {
+      'type': 'directory',
+      'name': "/Users/kkfinger/Documents/GitHub/KKPlayer/demo/Build/Products/Debug-iphoneos/KKPlayer.framework/Modules",
+      'contents': [
+        {
+          'type': 'file',
+          'name': "module.modulemap",
+          'external-contents': "/Users/kkfinger/Documents/GitHub/KKPlayer/demo/Build/Intermediates.noindex/KKPlayer.build/Debug-iphoneos/KKPlayer.build/module.modulemap"
+        }
+      ]
+    }
+  ]
+}

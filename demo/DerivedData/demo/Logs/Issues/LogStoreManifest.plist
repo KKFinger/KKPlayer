@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>9</integer>
+	<key>logs</key>
+	<dict>
+		<key>2981A35B-0752-47B7-9453-6DC5293CCFEE</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.target.product-type.application</string>
+			<key>fileName</key>
+			<string>2981A35B-0752-47B7-9453-6DC5293CCFEE.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>W</string>
+			<key>signature</key>
+			<string>demo-ios-exxocuryjbbxmafosotgeswjftvf</string>
+			<key>timeStartedRecording</key>
+			<real>571909754.58125806</real>
+			<key>timeStoppedRecording</key>
+			<real>571909755.50919998</real>
+			<key>title</key>
+			<string>Build target demo-ios</string>
+			<key>uniqueIdentifier</key>
+			<string>2981A35B-0752-47B7-9453-6DC5293CCFEE</string>
+		</dict>
+		<key>CA724C62-B61F-4DEC-8C3E-C9A8D769EA1A</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.target.product-type.framework</string>
+			<key>fileName</key>
+			<string>CA724C62-B61F-4DEC-8C3E-C9A8D769EA1A.xcactivitylog</string>
+			<key>highLevelStatus</key>
+			<string>W</string>
+			<key>signature</key>
+			<string>KKPlayer-fuvfumetrtxeumbuljarcddyyfjg</string>
+			<key>timeStartedRecording</key>
+			<real>571909754.07008195</real>
+			<key>timeStoppedRecording</key>
+			<real>571909754.58081198</real>
+			<key>title</key>
+			<string>Build target KKPlayer</string>
+			<key>uniqueIdentifier</key>
+			<string>CA724C62-B61F-4DEC-8C3E-C9A8D769EA1A</string>
+		</dict>
+	</dict>
+	<key>preserveOldLogs</key>
+	<true/>
+</dict>
+</plist>

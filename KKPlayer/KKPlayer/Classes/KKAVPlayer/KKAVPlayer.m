@@ -52,6 +52,9 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
     if (self = [super init]) {
         self.playerInterface = playerInterface;
         self.assetloadKeys = @[@"tracks", @"playable"] ;
+        
+        // 监听耳机插入和拔掉通知
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(audioRouteChangeListenerCallback:) name:AVAudioSessionRouteChangeNotification object:nil];
     }
     return self;
 }
@@ -488,6 +491,35 @@ static NSString *const AVMediaSelectionOptionTrackIDKey = @"MediaSelectionOption
         return obj;
     }
     return nil;
+}
+
+/**
+ *  耳机插入、拔出事件
+ */
+- (void)audioRouteChangeListenerCallback:(NSNotification*)notification {
+    NSDictionary *interuptionDict = notification.userInfo;
+    
+    NSInteger routeChangeReason = [[interuptionDict valueForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
+    
+    switch (routeChangeReason) {
+        case AVAudioSessionRouteChangeReasonNewDeviceAvailable:{
+        }
+            break;
+        case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:{
+            //获取上一线路描述信息并获取上一线路的输出设备类型
+            AVAudioSessionRouteDescription *previousRoute = interuptionDict[AVAudioSessionRouteChangePreviousRouteKey];
+            AVAudioSessionPortDescription *previousOutput = previousRoute.outputs[0];
+            NSString *portType = previousOutput.portType;
+            if ([portType isEqualToString:AVAudioSessionPortHeadphones]) {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_global_queue(0, 0), ^{
+                    [self play];
+                });
+            }
+        }
+            break;
+        case AVAudioSessionRouteChangeReasonCategoryChange:
+            break;
+    }
 }
 
 #pragma mark -- @property Setter & Getter
