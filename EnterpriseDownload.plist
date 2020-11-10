@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   EnterpriseDownload.plist
+   Medipedia-iOS
+
+   Created by kkfinger on 2020/11/10.
+   Copyright (c) 2020 kkfinger. All rights reserved.
+-->
+<plist version="1.0">
+<dict>
+    <key>items</key>
+    <array>
+        <dict>
+            <key>assets</key>
+            <array>
+                <dict>
+                    <key>kind</key>
+                    <string>software-package</string>
+                    <key>url</key>
+                    <string>https://git.code.oa.com/yujianwu/iPADownload/blob/master/Medipedia-iOS-Test_enterprise_sign.ipa</string>
+                </dict>
+                <dict>
+                    <key>kind</key>
+                    <string>display-image</string>
+                    <key>url</key>
+                    <string>https://git.code.oa.com/yujianwu/iPADownload/blob/master/60*60@3x.png</string>
+                </dict>
+                <dict>
+                    <key>kind</key>
+                    <string>full-size-image</string>
+                    <key>url</key>
+                    <string>https://git.code.oa.com/yujianwu/iPADownload/blob/master/60*60@3x.png</string>
+                </dict>
+            </array>
+            <key>metadata</key>
+            <dict>
+                <key>bundle-identifier</key>
+                <string>com.tencent.mymedinfo</string>
+                <key>bundle-version</key>
+                <string>2.3.5</string>
+                <key>kind</key>
+                <string>software</string>
+                <key>title</key>
+                <string>腾讯医典</string>
+            </dict>
+        </dict>
+    </array>
+</dict>
+</plist>
